@@ -15,7 +15,8 @@ println task.executionDuration()
 
 WorkflowExecutionContext wf = new WorkflowExecutionContextImpl('proc#1', 'default')
 
-wf.start()
+wf.start([name:'william'])
 wf.stop()
+println "proc var " + wf.processVariables
 
 
