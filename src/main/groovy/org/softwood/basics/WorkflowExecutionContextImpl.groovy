@@ -33,6 +33,17 @@ class WorkflowExecutionContextImpl implements WorkflowExecutionContext {
     }
 
     @Override
+    WorkflowExecutionContext start (Map inputVariables) {
+        startTime = LocalDateTime.now()
+        processVariables = inputVariables
+
+        log.info "starting process $processInstanceId (name:$processInstanceName) from template $processDefinitionTemplate"
+        //todo
+        //create first task from template and queue that
+        //for execution
+        this
+    }
+    @Override
     void stop () {
         log.info "ending process $processInstanceId "
         endTime = LocalDateTime.now()
