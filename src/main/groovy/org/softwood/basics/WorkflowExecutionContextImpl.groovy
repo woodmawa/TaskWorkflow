@@ -3,6 +3,7 @@ package org.softwood.basics
 import groovy.util.logging.Slf4j
 
 import java.time.LocalDateTime
+import java.util.concurrent.ConcurrentHashMap
 
 @Slf4j
 class WorkflowExecutionContextImpl implements WorkflowExecutionContext {
@@ -11,6 +12,8 @@ class WorkflowExecutionContextImpl implements WorkflowExecutionContext {
     private final String processInstanceName
     private LocalDateTime startTime, endTime
     private String processDefinitionTemplate
+
+    ConcurrentHashMap processVariables = [:]
 
     //constructor - needs an instance name
     WorkflowExecutionContextImpl (String name, String template) {
@@ -33,6 +36,16 @@ class WorkflowExecutionContextImpl implements WorkflowExecutionContext {
     void stop () {
         log.info "ending process $processInstanceId "
         endTime = LocalDateTime.now()
+    }
+
+    @Override
+    void setProcessVariables (Map variables ) {
+        processVariables = variables
+    }
+
+    @Override
+    ConcurrentHashMap getProcessVariables () {
+        processVariables
     }
 
     @Override

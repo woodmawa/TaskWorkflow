@@ -9,5 +9,7 @@ interface WorkflowExecutionContext {
     LocalDateTime getEndTime()
     WorkflowExecutionContext start ()
     void stop ()
+    void setProcessVariables (Map variables)
+    Map getProcessVariables ()
 
 }

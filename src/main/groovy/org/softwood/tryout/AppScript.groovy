@@ -12,6 +12,7 @@ println task.dump()
 
 println task.executionDuration()
 
+
 WorkflowExecutionContext wf = new WorkflowExecutionContextImpl('proc#1', 'default')
 
 wf.start()
