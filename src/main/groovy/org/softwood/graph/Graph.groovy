@@ -57,6 +57,7 @@ class Graph {
         queue.add(root)
         visited.add(root)
         while (!queue.isEmpty()) {
+            //get and remove the head of the queue
             String vertex = queue.poll()
             for (Vertex v : graph.getAdjVertices(vertex)) {
                 if (!visited.contains(v.name)) {
