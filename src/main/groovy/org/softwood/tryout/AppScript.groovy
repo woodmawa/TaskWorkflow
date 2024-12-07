@@ -23,7 +23,7 @@ wf.stop()
 println "proc var " + wf.processVariables
 
 Graph g = StandardProcessDefinitionTemplateImpl.helloWorldProcess()
-var result = Graph.breadthFirstTraversal(g, 'start')
+var result = Graph.depthFirstTraversal(g, 'start')
 
 println result
 

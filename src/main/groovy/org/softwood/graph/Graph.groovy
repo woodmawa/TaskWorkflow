@@ -1,5 +1,8 @@
 package org.softwood.graph
 
+import groovy.transform.EqualsAndHashCode
+import groovy.transform.ToString
+
 class Graph {
     private Map<Vertex, List<Vertex>> adjVertices = [:]
 
@@ -44,7 +47,7 @@ class Graph {
             if (!visited.contains(vertex)) {
                 visited.add(vertex)
                 for (Vertex v : graph.getAdjVertices(vertex)) {
-                    stack.push(v.label)
+                    stack.push(v.name)
                 }
             }
         }
@@ -67,6 +70,17 @@ class Graph {
             }
         }
         return visited
+    }
+
+    @EqualsAndHashCode
+    @ToString
+    private class Vertex {
+        String name
+
+        Vertex (String name) {
+            this.name = name
+        }
+
     }
 }
 

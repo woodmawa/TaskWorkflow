@@ -1,8 +1,7 @@
 package org.softwood.processLibrary
 
-import org.softwood.graph.Edge
+
 import org.softwood.graph.Graph
-import org.softwood.graph.Vertex
 
 class StandardProcessDefinitionTemplateImpl implements ProcessTemplate {
 
