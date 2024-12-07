@@ -4,6 +4,9 @@ import org.softwood.basics.ScriptTask
 import org.softwood.basics.Task
 import org.softwood.basics.WorkflowExecutionContext
 import org.softwood.basics.WorkflowExecutionContextImpl
+import org.softwood.graph.Graph
+import org.softwood.processLibrary.ProcessTemplate
+import org.softwood.processLibrary.StandardProcessDefinitionTemplateImpl
 
 Task task = new ScriptTask()
 task.execute()
@@ -18,5 +21,11 @@ WorkflowExecutionContext wf = new WorkflowExecutionContextImpl('proc#1', 'defaul
 wf.start([name:'william'])
 wf.stop()
 println "proc var " + wf.processVariables
+
+Graph g = StandardProcessDefinitionTemplateImpl.helloWorldProcess()
+var result = Graph.breadthFirstTraversal(g, 'start')
+
+println result
+
 
 

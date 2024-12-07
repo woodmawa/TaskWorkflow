@@ -23,6 +23,9 @@ dependencies {
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
+    //graph model using
+    implementation group: 'org.jgrapht', name: 'jgrapht-core', version: '1.5.2'
 }
 
 tasks.named('test') {
