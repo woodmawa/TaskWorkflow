@@ -3,8 +3,8 @@ package org.softwood.tryout
 import org.jgrapht.Graph
 import org.jgrapht.graph.DefaultEdge
 import org.jgrapht.traverse.DepthFirstIterator
-import org.softwood.basics.ScriptTask
-import org.softwood.basics.Task
+import org.softwood.taskTypes.ScriptTask
+import org.softwood.taskTypes.Task
 import org.softwood.basics.WorkflowExecutionContext
 import org.softwood.basics.WorkflowExecutionContextImpl
 

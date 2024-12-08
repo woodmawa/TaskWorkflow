@@ -1,4 +1,4 @@
-package org.softwood.basics
+package org.softwood.taskTypes
 
 import groovy.util.logging.Slf4j
 
@@ -6,33 +6,28 @@ import java.time.Duration
 import java.time.LocalDateTime
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
-import java.util.function.BiFunction
 
 @Slf4j
-class ClassDelegateTask implements Task {
+class ScriptTask implements Task {
     String taskName
-    Closure taskDelegateFunction  //class::bifunc(Map param )
+    CompletableFuture previousTaskOutcome
+
 
     //@Autowired (false) WorkflowExecutionContext taskExecutionContext
 
+    Closure script = {println "hello William"}
     LocalDateTime startTime, endTime
     TaskStatus status = TaskStatus.PENDING
     ConcurrentHashMap taskVariables = [:]
-    String taskType = "ClassDelegate"
+    String taskType = "Script"
 
-    ClassDelegateTask (String name, BiFunction methodRef ) {
-        taskName = name
-        taskDelegateFunction = methodRef
-
-
-    }
     @Override
     CompletableFuture execute() {
         startTime = LocalDateTime.now()
         status = TaskStatus.RUNNING
         log.info "running script "
         CompletableFuture taskFuture = new CompletableFuture<>()
-        taskFuture.supplyAsync {taskDelegateFunction()}
+        taskFuture.supplyAsync {script()}
         endTime =LocalDateTime.now()
         status = TaskStatus.COMPLETED
         taskFuture
@@ -44,7 +39,7 @@ class ClassDelegateTask implements Task {
         status = TaskStatus.RUNNING
         log.info "running script with task variables in "
         CompletableFuture taskFuture = new CompletableFuture()
-        taskFuture.supplyAsync {taskDelegateFunction(taskVariables)}
+        taskFuture.supplyAsync {script(new Binding (taskVariables))}
         endTime =LocalDateTime.now()
         status = TaskStatus.COMPLETED
         taskFuture

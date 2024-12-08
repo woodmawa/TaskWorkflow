@@ -1,4 +1,4 @@
-package org.softwood.basics
+package org.softwood.taskTypes
 
 enum TaskStatus {
     PENDING,
