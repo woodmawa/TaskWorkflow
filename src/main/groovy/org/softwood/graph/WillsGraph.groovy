@@ -3,11 +3,15 @@ package org.softwood.graph
 import groovy.transform.EqualsAndHashCode
 import groovy.transform.ToString
 
-class Graph {
+class WillsGraph {
     private Map<Vertex, List<Vertex>> adjVertices = [:]
+    private Map<Vertex, List<Vertex>> fromVertices = [:]
+    private Map<Vertex, List<Vertex>> toVertices = [:]
 
     void addVertex(String label) {
         adjVertices.putIfAbsent(new Vertex(label), new ArrayList<>())
+        fromVertices.putIfAbsent(new Vertex(label), new ArrayList<>())
+        toVertices.putIfAbsent(new Vertex(label), new ArrayList<>())
     }
 
     void removeVertex(String label) {
@@ -21,6 +25,8 @@ class Graph {
         Vertex v2 = new Vertex(label2)
         adjVertices.get(v1).add(v2)
         adjVertices.get(v2).add(v1)
+        fromVertices.get(v2).add(v1)
+        toVertices.get(v1)add(v2)
     }
 
     void removeEdge(String label1, String label2) {
@@ -38,7 +44,15 @@ class Graph {
         return adjVertices.get(new Vertex(label))
     }
 
-    static Set<String> depthFirstTraversal(Graph graph, String root) {
+    List<Vertex> getFromVertices(String label) {
+        return fromVertices.get(new Vertex(label))
+    }
+
+    List<Vertex> getToVertices(String label) {
+        return toVertices.get(new Vertex(label))
+    }
+
+    static Set<String> depthFirstTraversal(WillsGraph graph, String root) {
         Set<String> visited = new LinkedHashSet<String>()
         Stack<String> stack = new Stack<String>()
         stack.push(root)
@@ -54,7 +68,7 @@ class Graph {
         return visited
     }
 
-    static Set<String> breadthFirstTraversal(Graph graph, String root) {
+    static Set<String> breadthFirstTraversal(WillsGraph graph, String root) {
         Set<String> visited = new LinkedHashSet<String>()
         Queue<String> queue = new LinkedList<String>()
         queue.add(root)

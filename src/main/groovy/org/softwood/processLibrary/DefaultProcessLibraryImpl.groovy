@@ -12,4 +12,7 @@ class DefaultProcessLibraryImpl implements ProcessLibrary {
 
     }
 
+    Object match (String filter) {
+
+    }
 }

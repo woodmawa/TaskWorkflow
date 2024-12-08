@@ -1,8 +1,10 @@
 package org.softwood.basics
 
+import java.util.concurrent.CompletableFuture
+
 interface Task<T> {
-    T execute ()
-    T execute (Map inputVariables)
+    CompletableFuture<T> execute ()
+    CompletableFuture<T> execute (Map inputVariables)
     Map getTaskVariables()
     String getTaskType()
 }
