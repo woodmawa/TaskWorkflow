@@ -4,6 +4,8 @@ import java.util.concurrent.CompletableFuture
 
 class StartTask implements Task {
     String taskName
+    CompletableFuture previousTaskOutcome
+
 
     CompletableFuture  start () {
         CompletableFuture.completedFuture("started")
