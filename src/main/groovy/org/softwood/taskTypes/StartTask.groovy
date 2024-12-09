@@ -5,6 +5,8 @@ import java.util.concurrent.CompletableFuture
 class StartTask implements Task {
     String taskName
     CompletableFuture previousTaskOutcome
+    Map taskVariables = [:]
+
 
 
     CompletableFuture  start () {
@@ -18,16 +20,17 @@ class StartTask implements Task {
 
     @Override
     CompletableFuture execute(Map inputVariables) {
+        taskVariables = inputVariables
         start ()
     }
 
     @Override
     Map getTaskVariables() {
-        return null
+        return taskVariables.asImmutable()
     }
 
     @Override
     String getTaskType() {
-        return null
+        return this.class.getSimpleName()
     }
 }

@@ -5,26 +5,32 @@ import groovy.util.logging.Slf4j
 import java.util.concurrent.CompletableFuture
 
 @Slf4j
-class EndTask {
+class EndTask implements Task{
     String taskName
     CompletableFuture previousTaskOutcome
+    Map taskVariables = [:]
 
-    CompletableFuture  end () {
+    private CompletableFuture  end () {
         CompletableFuture.completedFuture("completed")
     }
 
     @Override
     CompletableFuture execute() {
-        end ()
+        end()
     }
 
     @Override
     CompletableFuture execute(Map inputVariables) {
-        end ()
+        end()  //todo
     }
 
     @Override
     Map getTaskVariables() {
-        return null
+        return taskVariables
+    }
+
+    @Override
+    String getTaskType() {
+        return this.class.getSimpleName()
     }
 }
