@@ -6,10 +6,14 @@ class StartTask implements Task {
     String taskName
     CompletableFuture previousTaskOutcome
     Map<String, ? extends Object> taskVariables = [:]
-
+    Closure taskInitialisation
 
 
     CompletableFuture  start () {
+
+        //todo - get next step from template
+        //if taskInitialisation -> call taskInitialisation ( taskVariables)
+        //let  process instance know that start step is complete
         CompletableFuture.completedFuture("started")
     }
 
@@ -27,6 +31,10 @@ class StartTask implements Task {
     @Override
     Map getTaskVariables() {
         return taskVariables.asImmutable()
+    }
+
+    Void addTaskVariables(Map variables ) {
+        return taskVariables << variables ?: [:]
     }
 
     @Override
