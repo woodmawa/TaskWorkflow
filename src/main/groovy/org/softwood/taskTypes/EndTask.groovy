@@ -8,7 +8,7 @@ import java.util.concurrent.CompletableFuture
 class EndTask implements Task{
     String taskName
     CompletableFuture previousTaskOutcome
-    Map taskVariables = [:]
+    Map<String, ? extends Object> taskVariables = [:]
 
     private CompletableFuture  end () {
         CompletableFuture.completedFuture("completed")

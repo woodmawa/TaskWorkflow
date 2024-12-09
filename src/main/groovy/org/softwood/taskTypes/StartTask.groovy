@@ -5,7 +5,7 @@ import java.util.concurrent.CompletableFuture
 class StartTask implements Task {
     String taskName
     CompletableFuture previousTaskOutcome
-    Map taskVariables = [:]
+    Map<String, ? extends Object> taskVariables = [:]
 
 
 
