@@ -84,7 +84,14 @@ library.add (procDef2)
 library.add (procDef3)
 
 List procs = library.search ("my")
-def proc = library.latest ("myProcess")
+Optional<ProcessTemplate> latest = library.latest ("myProcess")
+ProcessTemplate template = latest.get()
+
+ProcessInstance pi = template.start([var: 'will'])
+
+println "proc " + pi.processId + " started "
+
+
 
 SpringContextUtils::shutdown()
 

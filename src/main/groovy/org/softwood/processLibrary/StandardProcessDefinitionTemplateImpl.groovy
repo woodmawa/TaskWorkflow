@@ -5,12 +5,17 @@ import org.jgrapht.graph.DefaultEdge
 import org.jgrapht.graph.SimpleDirectedGraph
 
 import org.softwood.graph.TaskGraph
+import org.softwood.processEngine.ProcessInstance
+import org.springframework.beans.factory.annotation.Autowired
 
 class StandardProcessDefinitionTemplateImpl implements ProcessTemplate {
 
     String name
     String version
     TaskGraph processDefinition
+
+    //@Autowired
+    //ProcessInstance processInstance
 
     StandardProcessDefinitionTemplateImpl (String templateName, String version="1.0") {
         this.name = templateName
@@ -31,6 +36,16 @@ class StandardProcessDefinitionTemplateImpl implements ProcessTemplate {
 
     TaskGraph getProcessDefinition ( ) {
         processDefinition
+    }
+
+    @Override
+    ProcessInstance start (Map processVariables=[:]) {
+
+
+        //todo replace by scope bean
+        ProcessInstance processInstance = new ProcessInstance() //start new instance from this template
+        processInstance.setProcessTemplate(this)
+        processInstance.start ([var: "will" ])
     }
 
     static TaskGraph helloWorldProcessDirected () {
