@@ -1,11 +1,15 @@
 package org.softwood.tryout
 
+import groovy.util.logging.Slf4j
 import org.springframework.context.annotation.AnnotationConfigApplicationContext
 
 /**
  * creates script context for a groovy script  and returns it
  */
+@Slf4j
 class SpringScriptContext {
+
+    static AnnotationConfigApplicationContext appCtx
 
     static AnnotationConfigApplicationContext initialise (String activeProfile, List<String> basePackages = []) {
         /**
@@ -19,8 +23,14 @@ class SpringScriptContext {
         }
 
         ctx.refresh()
-        println "started spring context "
-        ctx
+        log.info "started scripts spring context "
+        appCtx = ctx
+    }
+
+    static void shutdown() {
+        log.info "closing script spring context "
+        appCtx.close()
+
     }
 
 }

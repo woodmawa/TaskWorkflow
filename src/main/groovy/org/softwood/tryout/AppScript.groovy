@@ -68,7 +68,6 @@ while ( gi.hasNext())  {
 
 println result2
 
-println "closing spring context "
-ctx.close()
+SpringScriptContext::shutdown()
 
 
