@@ -3,7 +3,7 @@ package org.softwood.graph
 import groovy.transform.EqualsAndHashCode
 import groovy.transform.ToString
 
-class WillsGraph {
+class TaskGraph {
     private Map<Vertex, List<Vertex>> adjVertices = [:]
     private Map<Vertex, List<Vertex>> fromVertices = [:]
     private Map<Vertex, List<Vertex>> toVertices = [:]
@@ -52,7 +52,7 @@ class WillsGraph {
         return toVertices.get(new Vertex(label))
     }
 
-    static Set<String> depthFirstTraversal(WillsGraph graph, String root) {
+    static Set<String> depthFirstTraversal(TaskGraph graph, String root) {
         Set<String> visited = new LinkedHashSet<String>()
         Stack<String> stack = new Stack<String>()
         stack.push(root)
@@ -68,7 +68,7 @@ class WillsGraph {
         return visited
     }
 
-    static Set<String> breadthFirstTraversal(WillsGraph graph, String root) {
+    static Set<String> breadthFirstTraversal(TaskGraph graph, String root) {
         Set<String> visited = new LinkedHashSet<String>()
         Queue<String> queue = new LinkedList<String>()
         queue.add(root)

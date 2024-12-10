@@ -4,18 +4,37 @@ import org.jgrapht.Graph
 import org.jgrapht.graph.DefaultEdge
 import org.jgrapht.graph.SimpleDirectedGraph
 
-import org.softwood.graph.WillsGraph
+import org.softwood.graph.TaskGraph
 
 class StandardProcessDefinitionTemplateImpl implements ProcessTemplate {
 
     String name
+    String version
+    TaskGraph processDefinition
 
-    StandardProcessDefinitionTemplateImpl (String templateName) {
+    StandardProcessDefinitionTemplateImpl (String templateName, String version="1.0") {
         this.name = templateName
+        this.version = version
     }
 
-    static WillsGraph helloWorldProcessDirected () {
-        WillsGraph graph = new WillsGraph()
+    String getName() {
+        name
+    }
+
+    String getVersion() {
+        version
+    }
+
+    void setProcessDefinition ( TaskGraph definition) {
+        this.processDefinition = definition
+    }
+
+    TaskGraph getProcessDefinition ( ) {
+        processDefinition
+    }
+
+    static TaskGraph helloWorldProcessDirected () {
+        TaskGraph graph = new TaskGraph()
         graph.addVertex('start')
         graph.addVertex ('helloTask')
         graph.addVertex ('decision')

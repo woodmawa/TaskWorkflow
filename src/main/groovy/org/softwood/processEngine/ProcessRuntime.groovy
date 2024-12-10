@@ -1,7 +1,7 @@
 package org.softwood.processEngine
 
 import groovy.util.logging.Slf4j
-import org.softwood.processLibrary.ProcessLibrary
+import org.softwood.processLibrary.ProcessTemplateLibrary
 import org.softwood.processLibrary.StandardProcessDefinitionTemplateImpl
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
@@ -26,7 +26,7 @@ class ProcessRuntime {
     }
 
     @Autowired
-    ProcessLibrary processLibrary
+    ProcessTemplateLibrary processLibrary
 
     void startProcess (String processTemplateName) {
 
