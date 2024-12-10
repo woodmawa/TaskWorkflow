@@ -12,25 +12,20 @@ import org.softwood.basics.WorkflowExecutionContextImpl
 
 import org.softwood.graph.WillsGraph
 import org.softwood.processLibrary.StandardProcessDefinitionTemplateImpl
-import org.springframework.beans.factory.annotation.Autowired
 
 import java.util.concurrent.CompletableFuture
 
 //import com.test.ApplicationConfiguration
 
-import org.springframework.context.annotation.AnnotationConfigApplicationContext
-
-
-
-var ctx = SpringScriptContext::initialise(activeProfile='dev', ["org.softwood.processEngine", "org.softwood.processLibrary"])
+var ctx = SpringContextUtils::initialise(activeProfile='dev', ["org.softwood.processEngine", "org.softwood.processLibrary"])
 
 //ctx.register(ApplicationConfiguration)
 //ctx.refresh()
 
-ProcessRuntime rt = ctx.getBean("processRuntime")
+ProcessRuntime rt = SpringContextUtils::getBean(ProcessRuntime)
 println "process runtime from ctx (status: ${rt.status})> "
 
-ProcessLibrary library = ctx.getBean ( "defaultProcessLibrary")
+ProcessLibrary library = SpringContextUtils::getQualifiedBean (ProcessLibrary, "default")
 println "default library is ${library.name}"
 
 
@@ -69,6 +64,6 @@ while ( gi.hasNext())  {
 
 println result2
 
-SpringScriptContext::shutdown()
+SpringContextUtils::shutdown()
 
 
