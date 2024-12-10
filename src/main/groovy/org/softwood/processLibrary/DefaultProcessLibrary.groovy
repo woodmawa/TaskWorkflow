@@ -1,12 +1,20 @@
 package org.softwood.processLibrary
 
+import groovy.util.logging.Slf4j
 import org.springframework.stereotype.Component
 
 import java.util.concurrent.ConcurrentHashMap
 
 @Component
-class DefaultProcessLibraryImpl implements ProcessLibrary {
+@Slf4j
+class DefaultProcessLibrary implements ProcessLibrary {
+    String name = "DefaultProcessLibrary"
+
     ConcurrentHashMap<String, ProcessTemplate> library = [:]
+
+    DefaultProcessLibrary() {
+
+    }
 
     Object search (String filter) {
 

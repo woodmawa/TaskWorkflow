@@ -11,11 +11,18 @@ import java.time.LocalDateTime
 @Component
 @Slf4j
 class ProcessRuntime {
+    enum RuntimeStatus {
+        Uninitialised,
+        Running,
+        Shutdown
+    }
     LocalDateTime started = LocalDateTime.now()
-    String status
+    String status = RuntimeStatus.Uninitialised
+
+
 
     ProcessRuntime () {
-        status = "Running"
+        status = RuntimeStatus.Running
     }
 
     @Autowired
@@ -36,3 +43,4 @@ class ProcessRuntime {
 
     }
 }
+

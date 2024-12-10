@@ -4,6 +4,7 @@ import org.jgrapht.Graph
 import org.jgrapht.graph.DefaultEdge
 import org.jgrapht.traverse.DepthFirstIterator
 import org.softwood.processEngine.ProcessRuntime
+import org.softwood.processLibrary.ProcessLibrary
 import org.softwood.taskTypes.ScriptTask
 import org.softwood.taskTypes.Task
 import org.softwood.basics.WorkflowExecutionContext
@@ -11,6 +12,7 @@ import org.softwood.basics.WorkflowExecutionContextImpl
 
 import org.softwood.graph.WillsGraph
 import org.softwood.processLibrary.StandardProcessDefinitionTemplateImpl
+import org.springframework.beans.factory.annotation.Autowired
 
 import java.util.concurrent.CompletableFuture
 
@@ -26,9 +28,12 @@ var ctx = SpringScriptContext::initialise(activeProfile='dev', ["org.softwood.pr
 //ctx.refresh()
 
 ProcessRuntime rt = ctx.getBean("processRuntime")
-println "process runtime from ctx (${rt.status})> " + rt.inspect()
+println "process runtime from ctx (status: ${rt.status})> "
 
-ctx.close()
+ProcessLibrary library = ctx.getBean ( "defaultProcessLibrary")
+println "default library is ${library.name}"
+
+
 Task task = new ScriptTask()
 CompletableFuture future = task.execute()
  //wait for result
