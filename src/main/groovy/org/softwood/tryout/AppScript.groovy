@@ -19,18 +19,14 @@ import java.util.concurrent.CompletableFuture
 import org.springframework.context.annotation.AnnotationConfigApplicationContext
 
 
-def activeProfile = 'test'
 
-var ctx = SpringScriptContext::initialise(activeProfile, ["org.softwood.processEngine", "org.softwood.processLibrary"])
+var ctx = SpringScriptContext::initialise(activeProfile='dev', ["org.softwood.processEngine", "org.softwood.processLibrary"])
 
 //ctx.register(ApplicationConfiguration)
 //ctx.refresh()
 
-
-
-
 ProcessRuntime rt = ctx.getBean("processRuntime")
-println "process runtime from ctx > " + rt.inspect()
+println "process runtime from ctx (${rt.status})> " + rt.inspect()
 
 ctx.close()
 Task task = new ScriptTask()

@@ -9,7 +9,7 @@ import org.springframework.context.annotation.AnnotationConfigApplicationContext
 @Slf4j
 class SpringScriptContext {
 
-    static AnnotationConfigApplicationContext appCtx
+    static AnnotationConfigApplicationContext applicationCtx
 
     static AnnotationConfigApplicationContext initialise (String activeProfile, List<String> basePackages = []) {
         /**
@@ -23,13 +23,13 @@ class SpringScriptContext {
         }
 
         ctx.refresh()
-        log.info "started scripts spring context "
-        appCtx = ctx
+        log.info "started scripts spring context [env:($activeProfile)] including basePackages $basePackages"
+        applicationCtx = ctx
     }
 
     static void shutdown() {
         log.info "closing script spring context "
-        appCtx.close()
+        applicationCtx.close()
 
     }
 
