@@ -6,13 +6,22 @@ import org.softwood.processLibrary.StandardProcessDefinitionTemplateImpl
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
 
+import java.time.LocalDateTime
+
 @Component
 @Slf4j
 class ProcessRuntime {
-    void startProcess (String processTemplateName) {
+    LocalDateTime started = LocalDateTime.now()
+    String status
 
-        //@Autowired
-        ProcessLibrary processLibrary
+    ProcessRuntime () {
+        status = "Running"
+    }
+
+    @Autowired
+    ProcessLibrary processLibrary
+
+    void startProcess (String processTemplateName) {
 
         ProcessInstance processInstance = new ProcessInstance ('standard')
         //todo lookup process in library

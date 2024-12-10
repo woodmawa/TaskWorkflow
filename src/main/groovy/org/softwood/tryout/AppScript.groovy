@@ -3,6 +3,7 @@ package org.softwood.tryout
 import org.jgrapht.Graph
 import org.jgrapht.graph.DefaultEdge
 import org.jgrapht.traverse.DepthFirstIterator
+import org.softwood.processEngine.ProcessRuntime
 import org.softwood.taskTypes.ScriptTask
 import org.softwood.taskTypes.Task
 import org.softwood.basics.WorkflowExecutionContext
@@ -13,6 +14,25 @@ import org.softwood.processLibrary.StandardProcessDefinitionTemplateImpl
 
 import java.util.concurrent.CompletableFuture
 
+//import com.test.ApplicationConfiguration
+
+import org.springframework.context.annotation.AnnotationConfigApplicationContext
+
+
+def activeProfile = 'test'
+
+var ctx = SpringScriptContext::initialise(activeProfile, ["org.softwood.processEngine", "org.softwood.processLibrary"])
+
+//ctx.register(ApplicationConfiguration)
+//ctx.refresh()
+
+
+
+
+ProcessRuntime rt = ctx.getBean("processRuntime")
+println "process runtime from ctx > " + rt.inspect()
+
+ctx.close()
 Task task = new ScriptTask()
 CompletableFuture future = task.execute()
  //wait for result
@@ -47,5 +67,8 @@ while ( gi.hasNext())  {
 }
 
 println result2
+
+println "closing spring context "
+ctx.close()
 
 
