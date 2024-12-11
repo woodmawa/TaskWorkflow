@@ -44,6 +44,22 @@ class SpringContextUtils {
         applicationCtx.getBean(serviceName)
     }
 
+    @NotNull
+    static def getPrototypeBean (Class serviceClazz, Map values) {
+
+        def factory = applicationCtx.getBeanFactory()
+        def p1 = values[0]
+        def p2 = values[1]
+        def  bean = factory.getBean(serviceClazz)  //triggers ProcessLibraryConfiguration - zero arg constructor
+        //trying to create factory bean with params is failing so - add the values from the map after creation
+        values.each {entry ->
+            bean["$entry.key"] = entry.value
+        }
+
+        bean
+    }
+
+
     static void shutdown() {
         log.info "closing script spring context "
         applicationCtx.close()

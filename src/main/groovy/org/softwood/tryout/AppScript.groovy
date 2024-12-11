@@ -13,13 +13,14 @@ import org.softwood.basics.WorkflowExecutionContext
 import org.softwood.basics.WorkflowExecutionContextImpl
 
 import org.softwood.graph.TaskGraph
-import org.softwood.processLibrary.StandardProcessDefinitionTemplateImpl
+import org.softwood.processLibrary.StandardProcessTemplateInstance
+import org.springframework.beans.factory.annotation.Lookup
 
 import java.util.concurrent.CompletableFuture
 
 //import com.test.ApplicationConfiguration
 
-var ctx = SpringContextUtils::initialise(activeProfile='dev', ["org.softwood.processEngine", "org.softwood.processLibrary"])
+var ctx = SpringContextUtils::initialise(activeProfile='dev', ["org.softwood.processEngine", "org.softwood.processLibrary", "org.softwood.processBeanConfiguration"])
 
 //ctx.register(ApplicationConfiguration)
 //ctx.refresh()
@@ -49,7 +50,7 @@ wf.start([name:'william'])
 wf.stop()
 println "proc var " + wf.processVariables
 
-TaskGraph g = StandardProcessDefinitionTemplateImpl.helloWorldProcessDirected()
+TaskGraph g = StandardProcessTemplateInstance.helloWorldProcessDirected()
  result = TaskGraph.depthFirstTraversal(g, 'start')
 
 println result
@@ -57,7 +58,7 @@ println result
 var toVertices = g.getToVertices('decision')
 println "decision node has options to goto $toVertices"
 
-Graph<String, DefaultEdge> g2 = StandardProcessDefinitionTemplateImpl.helloWorldProcess2()
+Graph<String, DefaultEdge> g2 = StandardProcessTemplateInstance.helloWorldProcess2()
 DepthFirstIterator gi = new DepthFirstIterator(g2)
 List result2 = []
 while ( gi.hasNext())  {
@@ -72,12 +73,20 @@ graph.addVertex("start")
 graph.addVertex("end")
 graph.addEdge("start", "end")
 
-ProcessTemplate procDef = new StandardProcessDefinitionTemplateImpl("myProcess", version="1.0")
-ProcessTemplate procDef2 = new StandardProcessDefinitionTemplateImpl("myProcess", version="2.0")
-ProcessTemplate procDef3 = new StandardProcessDefinitionTemplateImpl("mySecondProcess", version="1.0")
-procDef.processDefinition = graph
-procDef2.processDefinition = graph
-procDef3.processDefinition = graph
+/*@Lookup ("processTemplateInstance")
+ProcessTemplate getProcessTemplate () {  //String name, version ="1.0"
+    null  //will be replaced
+}*/
+
+//ProcessTemplate t1 = ctx.getBeanFactory().getBean('processTemplate')
+ProcessTemplate t2 = SpringContextUtils.getPrototypeBean(ProcessTemplate, [name:"dummyProcess", version:"1.0", processDefinition:graph])
+//ProcessTemplate t1 = getProcessTemplate ()
+
+//create three prototypes - same graph in each but different names
+ProcessTemplate procDef = SpringContextUtils.getPrototypeBean(ProcessTemplate, [name:"myProcess", version:"1.0", processDefinition:graph])
+ProcessTemplate procDef2 =SpringContextUtils.getPrototypeBean(ProcessTemplate, [name:"myProcess", version:"2.0", processDefinition:graph])
+ProcessTemplate procDef3 =SpringContextUtils.getPrototypeBean(ProcessTemplate, [name:"mySecondProcess", version:"1.0", processDefinition:graph])
+
 
 library.add (procDef)
 library.add (procDef2)

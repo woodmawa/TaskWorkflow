@@ -2,7 +2,7 @@ package org.softwood.processEngine
 
 import groovy.util.logging.Slf4j
 import org.softwood.processLibrary.ProcessTemplateLibrary
-import org.softwood.processLibrary.StandardProcessDefinitionTemplateImpl
+import org.softwood.processLibrary.StandardProcessTemplateInstance
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
 
@@ -34,7 +34,7 @@ class ProcessRuntime {
         //todo lookup process in library
         if (processTemplateName == 'standard') {
             //todo refactor later
-            processInstance = StandardProcessDefinitionTemplateImpl.helloWorldProcess2()
+            processInstance = StandardProcessTemplateInstance.helloWorldProcess2()
 
         } else {
             //todo add search to interface

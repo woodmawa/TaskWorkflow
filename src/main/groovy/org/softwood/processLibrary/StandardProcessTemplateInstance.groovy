@@ -1,25 +1,45 @@
 package org.softwood.processLibrary
 
+import groovy.transform.ToString
 import org.jgrapht.Graph
 import org.jgrapht.graph.DefaultEdge
 import org.jgrapht.graph.SimpleDirectedGraph
 
 import org.softwood.graph.TaskGraph
 import org.softwood.processEngine.ProcessInstance
-import org.springframework.beans.factory.annotation.Autowired
+import org.softwood.tryout.SpringContextUtils
+import org.springframework.beans.factory.annotation.Lookup
+import org.springframework.beans.factory.annotation.Qualifier
+import org.springframework.beans.factory.config.ConfigurableBeanFactory
+import org.springframework.context.annotation.Scope
+import org.springframework.stereotype.Component
 
-class StandardProcessDefinitionTemplateImpl implements ProcessTemplate {
+@ToString
+@Component ("processTemplate")
+@Qualifier ("standard")
+@Scope (ConfigurableBeanFactory.SCOPE_PROTOTYPE)
+class StandardProcessTemplateInstance implements ProcessTemplate {
 
     String name
     String version
     TaskGraph processDefinition
 
-    //@Autowired
+    //do dynamic lookup to get new prototype bean
+    @Lookup ("processTemplateInstance")
+    public ProcessInstance getProcessInstance () {
+        null  //spring will override this and return prtototype
+    }
     //ProcessInstance processInstance
 
-    StandardProcessDefinitionTemplateImpl (String templateName, String version="1.0") {
+
+    StandardProcessTemplateInstance (String templateName, String version) {
         this.name = templateName
         this.version = version
+    }
+
+    StandardProcessTemplateInstance() {
+        this.name = null
+        this.version = null
     }
 
     String getName() {
@@ -41,11 +61,13 @@ class StandardProcessDefinitionTemplateImpl implements ProcessTemplate {
     @Override
     ProcessInstance start (Map processVariables=[:]) {
 
+        //get prototyped scoped processInstance and set the template to be this
+        ProcessInstance processInstance = SpringContextUtils.getPrototypeBean(ProcessInstance, [processVariables:processVariables])
+        processInstance.processTemplate = this
 
-        //todo replace by scope bean
-        ProcessInstance processInstance = new ProcessInstance() //start new instance from this template
+
         processInstance.setProcessTemplate(this)
-        processInstance.start ([var: "will" ])
+        processInstance.start (processVariables)
     }
 
     static TaskGraph helloWorldProcessDirected () {

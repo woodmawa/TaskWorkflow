@@ -4,13 +4,14 @@ import groovy.transform.ToString
 import groovy.util.logging.Slf4j
 import groovyjarjarantlr4.v4.runtime.misc.NotNull
 import org.softwood.processLibrary.ProcessTemplate
+import org.springframework.beans.factory.config.ConfigurableBeanFactory
 import org.springframework.context.annotation.Scope
 import org.springframework.stereotype.Component
 
 @ToString
 @Slf4j
 @Component
-@Scope("prototype")
+@Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
 class ProcessInstance {
     private enum ProcessState {
         Pending,
