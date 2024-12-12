@@ -9,19 +9,17 @@ import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
 
 @Slf4j
-class ScriptTask implements Task {
-    String taskName
+class ScriptTask implements TaskTrait {
     String taskType = this.class.getSimpleName()
-    Map taskVariables = [:]
-    CompletableFuture previousTaskOutcome
-
 
     //@Autowired (false) WorkflowExecutionContext taskExecutionContext
 
     Closure script = {println "hello William"}
-    LocalDateTime startTime, endTime
-    TaskStatus status = TaskStatus.PENDING
 
+
+    void setScript (Closure script) {
+        this.script = script
+    }
 
     @Override
     CompletableFuture execute() {
@@ -45,11 +43,6 @@ class ScriptTask implements Task {
         endTime =LocalDateTime.now()
         status = TaskStatus.COMPLETED
         taskFuture
-    }
-
-    @Override
-    void setTaskVariables(Map vars) {
-        taskVariables = vars ?: [:]
     }
 
     String executionDuration () {

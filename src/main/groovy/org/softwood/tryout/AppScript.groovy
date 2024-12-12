@@ -16,6 +16,7 @@ import org.softwood.basics.WorkflowExecutionContextImpl
 
 import org.softwood.graph.TaskGraph
 import org.softwood.processLibrary.StandardProcessTemplateInstance
+import org.softwood.taskTypes.TaskTrait
 import org.springframework.beans.factory.annotation.Lookup
 
 import java.util.concurrent.CompletableFuture
@@ -73,6 +74,31 @@ while ( gi.hasNext())  {
 println result2
 */
 
+class X implements TaskTrait {
+
+    @Override
+    CompletableFuture execute() {
+        return null
+    }
+
+    @Override
+    CompletableFuture execute(Map inputVariables) {
+        return null
+    }
+
+    @Override
+    void setTaskType(String name) {
+
+    }
+
+    @Override
+    String getTaskType() {
+        return null
+    }
+}
+
+//TaskTrait x = new X()
+//x.setTaskName =
 
 //create start-2-stop process
 TaskGraph graph = new TaskGraph()

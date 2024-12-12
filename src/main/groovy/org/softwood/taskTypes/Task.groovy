@@ -11,4 +11,5 @@ interface Task<T, R> {
     String getTaskType()
     void setTaskName(String name)
     String getTaskName ()
+    void setPreviousTaskResults (Task task, CompletableFuture result)
 }

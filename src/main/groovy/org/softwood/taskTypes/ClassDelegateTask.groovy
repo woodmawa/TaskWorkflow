@@ -10,18 +10,12 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.function.BiFunction
 
 @Slf4j
-class ClassDelegateTask implements Task {
-    String taskName
+class ClassDelegateTask implements TaskTrait {
     String taskType = this.class.getSimpleName()
     Closure taskDelegateFunction  //class::bifunc(Map param )
-    CompletableFuture previousTaskOutcome
 
 
     //@Autowired (false) WorkflowExecutionContext taskExecutionContext
-
-    LocalDateTime startTime, endTime
-    TaskStatus status = TaskStatus.PENDING
-    ConcurrentHashMap taskVariables = [:]
 
     ClassDelegateTask (String name, BiFunction methodRef ) {
         taskName = name
@@ -34,9 +28,11 @@ class ClassDelegateTask implements Task {
     CompletableFuture execute() {
         startTime = LocalDateTime.now()
         status = TaskStatus.RUNNING
-        log.info "running script "
+        log.info "running class delegate "
+
         CompletableFuture taskFuture = new CompletableFuture<>()
         taskFuture.supplyAsync {taskDelegateFunction()}
+
         endTime =LocalDateTime.now()
         status = TaskStatus.COMPLETED
         taskFuture
@@ -54,13 +50,5 @@ class ClassDelegateTask implements Task {
         taskFuture
     }
 
-    @Override
-    void setTaskVariables(Map vars) {
-        taskVariables = vars?: [:]
-    }
 
-    String executionDuration () {
-        Duration duration = Duration.between(startTime, endTime)
-        String formattedDuration =String.format("task execution time: %d ms", duration.toMillis())
-    }
 }

@@ -34,6 +34,7 @@ class ProcessInstance {
     ProcessTemplate fromTemplate
     ProcessState status
     Map processVariables
+    TaskGraph graph
 
     ProcessInstance () {
         processVariables = [:]
@@ -51,32 +52,49 @@ class ProcessInstance {
         status = ProcessState.Running
 
         //and now start the 'start' vertex as root
-        TaskGraph graph = fromTemplate.processDefinition
+        graph = fromTemplate.processDefinition
         Vertex head = graph.getHead()
         List<Vertex> nextVertices = graph.getToVertices(head.name)
-        Optional<Task> optionalStart = taskTypeLookup.getTaskFor(head, [taskName: "start"])
+        Optional<Task> optionalStart = taskTypeLookup.getTaskFor(head, [taskName: head.name])
+        Task previousTask = optionalStart.get()
 
-        CompletableFuture future
-        optionalStart.ifPresentOrElse({ future = it.execute() },
-                                                    {future = new CompletableFuture().complete("task not found")})
+        CompletableFuture result
+        optionalStart.ifPresentOrElse({task -> result = task.execute() },
+                                                    {result = new CompletableFuture().complete("task not found")})
 
         //walk the graph starting each task as required ...
-        if (nextVertices.size() == 1) {
-            Optional<Task> next = taskTypeLookup.getTaskFor(nextVertices[0], [taskName:"end"])
-            Task t = next.get()
-            if (t.taskType == "EndTask") {
-                log.info("end of process [$processId] with variables " + processVariables.toString())
-            }
-        } else {
-            for ( vertex in nextVertices) {
-                Optional<Task> next = taskTypeLookup.getTaskFor(vertex, [taskName:"??"])
-            }
-            //todo check and evaluate gateway tasks
-        }
+        processNextVertices (previousTask, result,  nextVertices )
+
+
         this
 
     }
 
+    private processNextVertices (Task previousTask, CompletableFuture result, List<Vertex> nextVertices) {
+        Optional<Task> next
 
+        for ( vertex in nextVertices) {
+            next = taskTypeLookup.getTaskFor(vertex, [taskName:"${vertex.name}"])
+            Task task = next.get()
+            task.setPreviousTaskResults(previousTask, result)
+            switch (task.taskType) {
+                case "EndTask" -> {
+                    task.execute()  //execute and run tidyUp()
+                    log.info("end of process [$processId] with variables " + processVariables.toString())
+                }
+                case "ScriptTask" -> {
+                    result = task.execute()
+                    List<Vertex> vertexList    = graph.getToVertices(task.taskName)
+                    //Optional<Task> optionalTask = taskTypeLookup.getTaskFor(vertexList[0], [taskName: vertexList[0].name])
+                    processNextVertices (task, result, vertexList)
+                }
+                default -> {
+                    println "next task was a $task.taskType"
+                    result = task.execute()
+                }
+            }
+        }
+
+    }
 
 }
