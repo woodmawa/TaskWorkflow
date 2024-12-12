@@ -2,36 +2,70 @@ package org.softwood.graph
 
 import groovy.transform.EqualsAndHashCode
 import groovy.transform.ToString
+import org.softwood.taskTypes.StartTask
 
 class TaskGraph {
     private Map<Vertex, List<Vertex>> adjVertices = [:]
     private Map<Vertex, List<Vertex>> fromVertices = [:]
     private Map<Vertex, List<Vertex>> toVertices = [:]
+    private Vertex head
 
-    void addVertex(String label) {
-        adjVertices.putIfAbsent(new Vertex(label), new ArrayList<>())
-        fromVertices.putIfAbsent(new Vertex(label), new ArrayList<>())
-        toVertices.putIfAbsent(new Vertex(label), new ArrayList<>())
+    Vertex getHead () {
+        head
     }
 
-    void removeVertex(String label) {
-        Vertex v = new Vertex(label);
+    Vertex addVertex(String label, Class type) {
+        Vertex vertex = new Vertex(label, type)
+        if (!head && type == StartTask)
+            head = vertex
+        adjVertices.putIfAbsent(vertex, new ArrayList<>())
+        fromVertices.putIfAbsent(vertex, new ArrayList<>())
+        toVertices.putIfAbsent(vertex, new ArrayList<>())
+        vertex
+    }
+
+    Vertex addVertex(Vertex v) {
+        if (!head && v.type == StartTask)
+            head = v
+        adjVertices.putIfAbsent(v, new ArrayList<>())
+        fromVertices.putIfAbsent(v, new ArrayList<>())
+        toVertices.putIfAbsent(v, new ArrayList<>())
+    }
+
+    void removeVertex(String label, Class type) {
+        Vertex v = new Vertex(label, type)
         adjVertices.values().stream().forEach(e -> e.remove(v))
-        adjVertices.remove(new Vertex(label))
+        adjVertices.remove(v)
     }
 
-    void addEdge(String label1, String label2) {
+    void removeVertex(Vertex v) {
+        adjVertices.values().stream().forEach(e -> e.remove(v))
+        adjVertices.remove(v)
+    }
+
+    /*void addEdge(String label1, String label2) {
         Vertex v1 = new Vertex(label1)
         Vertex v2 = new Vertex(label2)
         adjVertices.get(v1).add(v2)
         adjVertices.get(v2).add(v1)
         fromVertices.get(v2).add(v1)
-        toVertices.get(v1)add(v2)
+        toVertices.get(v1).add(v2)
+    }*/
+
+    void addEdge(Vertex v1, Vertex v2) {
+        adjVertices.get(v1).add(v2)
+        adjVertices.get(v2).add(v1)
+        fromVertices.get(v2).add(v1)
+        toVertices.get(v1).add(v2)
     }
 
     void removeEdge(String label1, String label2) {
-        Vertex v1 = new Vertex(label1)
-        Vertex v2 = new Vertex(label2)
+        Vertex v1 = lookupVertexByTaskName (label1)
+        Vertex v2 = lookupVertexByTaskName (label1)
+        removeEdge (v1, v2)
+    }
+
+    void removeEdge(Vertex v1, Vertex v2) {
         List<Vertex> eV1 = adjVertices.get(v1)
         List<Vertex> eV2 = adjVertices.get(v2)
         if (eV1 != null)
@@ -40,28 +74,46 @@ class TaskGraph {
             eV2.remove(v1)
     }
 
+
     List<Vertex> getAdjVertices(String label) {
-        return adjVertices.get(new Vertex(label))
+        def vertex = lookupVertexByTaskName (label)
+        return adjVertices.get(vertex)
+    }
+
+    List<Vertex> getAdjVertices (Vertex v) {
+        return adjVertices.get(v)
     }
 
     List<Vertex> getFromVertices(String label) {
-        return fromVertices.get(new Vertex(label))
+        def vertex = lookupVertexByTaskName (label)
+        return getFromVertices(vertex)
     }
+
+    List<Vertex> getFromVertices(Vertex v) {
+        return fromVertices.get(v)
+    }
+
 
     List<Vertex> getToVertices(String label) {
-        return toVertices.get(new Vertex(label))
+        def vertex = lookupVertexByTaskName (label)
+        return getToVertices(vertex)
     }
 
-    static Set<String> depthFirstTraversal(TaskGraph graph, String root) {
-        Set<String> visited = new LinkedHashSet<String>()
-        Stack<String> stack = new Stack<String>()
+    List<Vertex> getToVertices(Vertex v) {
+        return toVertices.get(v)
+    }
+
+    static Set<Vertex> depthFirstTraversal(TaskGraph graph, Vertex root) {
+        Set<Vertex> visited = new LinkedHashSet<Vertex>()
+        Stack<Vertex> stack = new Stack<Vertex>()
         stack.push(root)
         while (!stack.isEmpty()) {
-            String vertex = stack.pop()
+            Vertex vertex = stack.pop()
             if (!visited.contains(vertex)) {
                 visited.add(vertex)
-                for (Vertex v : graph.getAdjVertices(vertex)) {
-                    stack.push(v.name)
+                def list= graph.getAdjVertices(vertex)
+                for (Vertex v : list) {
+                    stack.push(v)
                 }
             }
         }
@@ -86,15 +138,11 @@ class TaskGraph {
         return visited
     }
 
-    @EqualsAndHashCode
-    @ToString
-    private class Vertex {
-        String name
-
-        Vertex (String name) {
-            this.name = name
-        }
-
+    //look for a task with this name in the task graph by checking the adjVertices map for an entry  and return that vertex
+    private lookupVertexByTaskName (String name) {
+        def matchedVertex = adjVertices.keySet().find {it.name == name}
+        matchedVertex
     }
+
 }
 

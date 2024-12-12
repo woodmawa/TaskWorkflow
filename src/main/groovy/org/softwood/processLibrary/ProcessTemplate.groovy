@@ -7,6 +7,7 @@ interface ProcessTemplate {
     String getName ()
     String getVersion ()
     void setProcessDefinition (TaskGraph definition)
+    TaskGraph getProcessDefinition ()
 
     ProcessInstance start (Map processVariables )
 

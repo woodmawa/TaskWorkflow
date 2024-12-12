@@ -1,18 +1,24 @@
 package org.softwood.taskTypes
 
+import groovy.transform.MapConstructor
+
 import java.util.concurrent.CompletableFuture
+
 
 class StartTask implements Task {
     String taskName
+    String taskType = this.class.getSimpleName()
+
     CompletableFuture previousTaskOutcome
     Map<String, ? extends Object> taskVariables = [:]
-    Closure taskInitialisation
+    Closure taskInitialisation = {var ->}
 
 
     CompletableFuture  start () {
 
         //todo - get next step from template
-        //if taskInitialisation -> call taskInitialisation ( taskVariables)
+        if (taskInitialisation)
+            taskInitialisation (taskVariables)
         //let  process instance know that start step is complete
         CompletableFuture.completedFuture("started")
     }
@@ -29,16 +35,22 @@ class StartTask implements Task {
     }
 
     @Override
+    void setTaskVariables(Map vars) {
+        taskVariables = vars?: [:]
+    }
+
+    @Override
     Map getTaskVariables() {
         return taskVariables.asImmutable()
     }
 
+
     Void addTaskVariables(Map variables ) {
-        return taskVariables << variables ?: [:]
+        taskVariables << variables ?: [:]
     }
 
     @Override
     String getTaskType() {
-        return this.class.getSimpleName()
+        taskType
     }
 }

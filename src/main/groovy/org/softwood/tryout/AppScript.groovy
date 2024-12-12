@@ -7,7 +7,9 @@ import org.softwood.processEngine.ProcessInstance
 import org.softwood.processEngine.ProcessRuntime
 import org.softwood.processLibrary.ProcessTemplate
 import org.softwood.processLibrary.ProcessTemplateLibrary
+import org.softwood.taskTypes.EndTask
 import org.softwood.taskTypes.ScriptTask
+import org.softwood.taskTypes.StartTask
 import org.softwood.taskTypes.Task
 import org.softwood.basics.WorkflowExecutionContext
 import org.softwood.basics.WorkflowExecutionContextImpl
@@ -51,13 +53,16 @@ wf.stop()
 println "proc var " + wf.processVariables
 
 TaskGraph g = StandardProcessTemplateInstance.helloWorldProcessDirected()
- result = TaskGraph.depthFirstTraversal(g, 'start')
+ result = TaskGraph.depthFirstTraversal(g, g.head)
 
 println result
 
 var toVertices = g.getToVertices('decision')
 println "decision node has options to goto $toVertices"
 
+/*
+
+//using library for graph
 Graph<String, DefaultEdge> g2 = StandardProcessTemplateInstance.helloWorldProcess2()
 DepthFirstIterator gi = new DepthFirstIterator(g2)
 List result2 = []
@@ -66,12 +71,16 @@ while ( gi.hasNext())  {
 }
 
 println result2
+*/
+
 
 //create start-2-stop process
 TaskGraph graph = new TaskGraph()
-graph.addVertex("start")
-graph.addVertex("end")
-graph.addEdge("start", "end")
+def start = graph.addVertex("start", StartTask)
+def script = graph.addVertex("script", ScriptTask)
+def end = graph.addVertex("end", EndTask)
+graph.addEdge(start, script)
+graph.addEdge(script, end)
 
 /*@Lookup ("processTemplateInstance")
 ProcessTemplate getProcessTemplate () {  //String name, version ="1.0"
@@ -97,8 +106,6 @@ Optional<ProcessTemplate> latest = library.latest ("myProcess")
 ProcessTemplate template = latest.get()
 
 ProcessInstance pi = template.start([var: 'will'])
-
-println "proc " + pi.processId + " started "
 
 
 

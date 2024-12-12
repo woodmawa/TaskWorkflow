@@ -1,5 +1,6 @@
 package org.softwood.taskTypes
 
+import groovy.transform.MapConstructor
 import groovy.util.logging.Slf4j
 
 import java.time.Duration
@@ -11,6 +12,7 @@ import java.util.function.BiFunction
 @Slf4j
 class ClassDelegateTask implements Task {
     String taskName
+    String taskType = this.class.getSimpleName()
     Closure taskDelegateFunction  //class::bifunc(Map param )
     CompletableFuture previousTaskOutcome
 
@@ -20,7 +22,6 @@ class ClassDelegateTask implements Task {
     LocalDateTime startTime, endTime
     TaskStatus status = TaskStatus.PENDING
     ConcurrentHashMap taskVariables = [:]
-    String taskType = "ClassDelegate"
 
     ClassDelegateTask (String name, BiFunction methodRef ) {
         taskName = name
@@ -51,6 +52,11 @@ class ClassDelegateTask implements Task {
         endTime =LocalDateTime.now()
         status = TaskStatus.COMPLETED
         taskFuture
+    }
+
+    @Override
+    void setTaskVariables(Map vars) {
+        taskVariables = vars?: [:]
     }
 
     String executionDuration () {

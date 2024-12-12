@@ -1,5 +1,6 @@
 package org.softwood.taskTypes
 
+import groovy.transform.MapConstructor
 import groovy.util.logging.Slf4j
 
 import java.time.Duration
@@ -10,6 +11,8 @@ import java.util.concurrent.ConcurrentHashMap
 @Slf4j
 class ScriptTask implements Task {
     String taskName
+    String taskType = this.class.getSimpleName()
+    Map taskVariables = [:]
     CompletableFuture previousTaskOutcome
 
 
@@ -18,8 +21,7 @@ class ScriptTask implements Task {
     Closure script = {println "hello William"}
     LocalDateTime startTime, endTime
     TaskStatus status = TaskStatus.PENDING
-    ConcurrentHashMap taskVariables = [:]
-    String taskType = "Script"
+
 
     @Override
     CompletableFuture execute() {
@@ -43,6 +45,11 @@ class ScriptTask implements Task {
         endTime =LocalDateTime.now()
         status = TaskStatus.COMPLETED
         taskFuture
+    }
+
+    @Override
+    void setTaskVariables(Map vars) {
+        taskVariables = vars ?: [:]
     }
 
     String executionDuration () {
