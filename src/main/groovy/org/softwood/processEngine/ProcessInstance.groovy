@@ -52,7 +52,7 @@ class ProcessInstance {
         status = ProcessState.Running
 
         //and now start the 'start' vertex as root
-        graph = fromTemplate.processDefinition
+        /*graph = fromTemplate.processDefinition
         Vertex head = graph.getHead()
         List<Vertex> nextVertices = graph.getToVertices(head.name)
         Optional<Task> optionalStart = taskTypeLookup.getTaskFor(head, [taskName: head.name])
@@ -63,13 +63,60 @@ class ProcessInstance {
                                                     {result = new CompletableFuture().complete("task not found")})
 
         //walk the graph starting each task as required ...
-        processNextVertices (previousTask, result,  nextVertices )
+        processNextVertices (previousTask, result,  nextVertices ) */
+
+        // Start the 'start' vertex as root
+        graph = fromTemplate.processDefinition
+        Vertex head = graph.getHead()
+        processVertex(head, CompletableFuture.completedFuture(Optional.empty()))
 
 
         this
 
     }
 
+    //reworked process sample
+    private void processVertex(Vertex vertex, CompletableFuture previousResult) {
+        Optional<Task> optionalTask = taskTypeLookup.getTaskFor(vertex, [taskName: vertex.name])
+        if (optionalTask.isEmpty()) {
+            log.warn("Task for vertex [${vertex.name}] not found")
+            return
+        }
+
+        Task task = optionalTask.get()
+        task.setPreviousTaskResults(null, previousResult)  //may fail !
+
+        CompletableFuture result = task.execute()
+        result.whenComplete { res, throwable ->
+            if (throwable != null) {
+                log.error("Task execution failed for vertex [${vertex.name}]", throwable)
+            } else {
+                log.info("Task completed for vertex [${vertex.name}] with result [$res]")
+                handleNextVertices(task, vertex)
+            }
+        }
+    }
+
+    private void handleNextVertices(Task task, Vertex vertex) {
+        List<Vertex> nextVertices = graph.getToVertices(vertex.name)
+        for (Vertex nextVertex : nextVertices) {
+            switch (task.taskType) {
+                case "EndTask":
+                    task.execute()  // Execute and run tidy up
+                    log.info("End of process [$processId] with variables " + processVariables.toString())
+                    break
+                case "ScriptTask":
+                    processVertex(nextVertex, task.execute())
+                    break
+                default:
+                    log.info("Next task is of type [$task.taskType]")
+                    processVertex(nextVertex, task.execute())
+                    break
+            }
+        }
+    }
+
+    /*** deprecate ? */
     private processNextVertices (Task previousTask, CompletableFuture result, List<Vertex> nextVertices) {
         Optional<Task> next
 
