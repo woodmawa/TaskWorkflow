@@ -1,13 +1,13 @@
 package org.softwood.taskTypes
 
-import groovy.transform.MapConstructor
 
 import java.time.LocalDateTime
 import java.util.concurrent.CompletableFuture
 
 
-class StartTask implements TaskTrait {
+class StartTask implements ExecutableTaskTrait {
     String taskType = this.class.getSimpleName()
+    String taskNature = "task"
 
     CompletableFuture  start () {
         startTime = LocalDateTime.now()
@@ -19,7 +19,7 @@ class StartTask implements TaskTrait {
 
         endTime = LocalDateTime.now()
         status = TaskStatus.COMPLETED
-        CompletableFuture.completedFuture("started")
+        CompletableFuture.completedFuture("start task started")
     }
 
     @Override

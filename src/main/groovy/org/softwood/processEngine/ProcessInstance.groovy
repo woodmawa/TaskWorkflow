@@ -3,10 +3,12 @@ package org.softwood.processEngine
 import groovy.transform.ToString
 import groovy.util.logging.Slf4j
 import groovyjarjarantlr4.v4.runtime.misc.NotNull
+import org.softwood.gatewayTypes.Gateway
 import org.softwood.graph.TaskGraph
 import org.softwood.graph.Vertex
 import org.softwood.processLibrary.ProcessTemplate
 import org.softwood.taskTypes.Task
+import org.softwood.taskTypes.TaskTrait
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.config.ConfigurableBeanFactory
 import org.springframework.context.annotation.Scope
@@ -68,7 +70,7 @@ class ProcessInstance {
         // Start the 'start' vertex as root
         graph = fromTemplate.processDefinition
         Vertex head = graph.getHead()
-        processVertex(head, CompletableFuture.completedFuture(Optional.empty()))
+        processVertex(head, CompletableFuture.completedFuture("process [$processId] started"))
 
 
         this
@@ -77,6 +79,7 @@ class ProcessInstance {
 
     //reworked process sample
     private void processVertex(Vertex vertex, CompletableFuture previousResult) {
+        CompletableFuture currentTaskResult
         Optional<Task> optionalTask = taskTypeLookup.getTaskFor(vertex, [taskName: vertex.name])
         if (optionalTask.isEmpty()) {
             log.warn("Task for vertex [${vertex.name}] not found")
@@ -84,9 +87,29 @@ class ProcessInstance {
         }
 
         Task task = optionalTask.get()
-        task.setPreviousTaskResults(null, previousResult)  //may fail !
 
-        CompletableFuture result = task.execute()
+        switch (task.taskType) {
+            case "StartTask":
+                currentTaskResult = task.execute()
+                task.setPreviousTaskResults(Optional.empty(), previousResult)
+            case "EndTask":
+                currentTaskResult = task.execute()  // Execute and run tidy up
+                task.setPreviousTaskResults(Optional.of(task), previousResult)
+
+                log.info("End of process [$processId] with variables " + processVariables.toString())
+                break
+            case "ScriptTask":
+                currentTaskResult= task.execute()
+                task.setPreviousTaskResults(Optional.of(task), previousResult)
+
+                break
+            default:
+                log.info("Next task is of type [$task.taskType]")
+                //processVertex(nextVertex, currentTaskResult)
+                break
+        }
+        handleNextVertices (task, vertex)
+        /*CompletableFuture result = task.execute()
         result.whenComplete { res, throwable ->
             if (throwable != null) {
                 log.error("Task execution failed for vertex [${vertex.name}]", throwable)
@@ -94,13 +117,20 @@ class ProcessInstance {
                 log.info("Task completed for vertex [${vertex.name}] with result [$res]")
                 handleNextVertices(task, vertex)
             }
-        }
+        }*/
     }
 
-    private void handleNextVertices(Task task, Vertex vertex) {
-        List<Vertex> nextVertices = graph.getToVertices(vertex.name)
+    private void handleNextVertices(TaskTrait task, Vertex vertex) {
+        List<Vertex> nextVertices = graph.getToVertices(task.name /*vertex.name*/)
         for (Vertex nextVertex : nextVertices) {
-            switch (task.taskType) {
+            if (task instanceof Gateway) {
+                println "process gateway task "
+            } else if ( task instanceof Task) {
+                processVertex(nextVertex, task.execute())
+            }
+
+
+            /*switch (task.taskType) {
                 case "EndTask":
                     task.execute()  // Execute and run tidy up
                     log.info("End of process [$processId] with variables " + processVariables.toString())
@@ -112,7 +142,7 @@ class ProcessInstance {
                     log.info("Next task is of type [$task.taskType]")
                     processVertex(nextVertex, task.execute())
                     break
-            }
+            }*/
         }
     }
 

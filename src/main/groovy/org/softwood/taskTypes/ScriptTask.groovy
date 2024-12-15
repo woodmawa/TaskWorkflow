@@ -11,6 +11,8 @@ import java.util.concurrent.ConcurrentHashMap
 @Slf4j
 class ScriptTask implements TaskTrait {
     String taskType = this.class.getSimpleName()
+    String taskNature = "task"
+
 
     //@Autowired (false) WorkflowExecutionContext taskExecutionContext
 

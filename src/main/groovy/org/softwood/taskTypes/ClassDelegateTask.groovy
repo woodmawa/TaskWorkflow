@@ -12,6 +12,8 @@ import java.util.function.BiFunction
 @Slf4j
 class ClassDelegateTask implements TaskTrait {
     String taskType = this.class.getSimpleName()
+    String taskNature = "task"
+
     Closure taskDelegateFunction  //class::bifunc(Map param )
 
 

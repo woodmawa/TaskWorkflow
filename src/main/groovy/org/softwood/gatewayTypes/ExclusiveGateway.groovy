@@ -1,4 +1,13 @@
 package org.softwood.gatewayTypes
 
-class ExclusiveGateway {
+import org.softwood.taskTypes.TaskTrait
+
+class ExclusiveGateway implements GatewayTaskTrait {
+    String taskCategory = "gateway"
+
+
+    @Override
+    String getTaskType() {
+        return null
+    }
 }

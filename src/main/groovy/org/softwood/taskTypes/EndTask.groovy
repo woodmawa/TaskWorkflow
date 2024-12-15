@@ -9,6 +9,8 @@ import java.util.concurrent.CompletableFuture
 @Slf4j
 class EndTask implements TaskTrait {
     String taskType = this.class.getSimpleName()
+    String taskNature = "task"
+
 
     private Closure tidyUpProcess = {}
 
@@ -21,7 +23,7 @@ class EndTask implements TaskTrait {
 
        endTime = LocalDateTime.now()
        status = TaskStatus.COMPLETED
-       CompletableFuture.completedFuture("completed")
+       CompletableFuture.completedFuture("end task completed")
     }
 
     @Override
