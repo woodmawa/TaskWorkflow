@@ -7,7 +7,7 @@ import java.util.concurrent.CompletableFuture
 
 class StartTask implements ExecutableTaskTrait {
     String taskType = this.class.getSimpleName()
-    String taskNature = "task"
+    String taskCategory = "task"
 
     CompletableFuture  start () {
         startTime = LocalDateTime.now()
@@ -19,7 +19,7 @@ class StartTask implements ExecutableTaskTrait {
 
         endTime = LocalDateTime.now()
         status = TaskStatus.COMPLETED
-        CompletableFuture.completedFuture("start task started")
+        CompletableFuture.completedFuture("start task completed")
     }
 
     @Override

@@ -11,7 +11,7 @@ import java.util.concurrent.ConcurrentHashMap
 @Slf4j
 class ScriptTask implements TaskTrait {
     String taskType = this.class.getSimpleName()
-    String taskNature = "task"
+    String taskCategory = "task"
 
 
     //@Autowired (false) WorkflowExecutionContext taskExecutionContext
@@ -23,7 +23,6 @@ class ScriptTask implements TaskTrait {
         this.script = script
     }
 
-    @Override
     CompletableFuture execute() {
         startTime = LocalDateTime.now()
         status = TaskStatus.RUNNING
@@ -35,7 +34,6 @@ class ScriptTask implements TaskTrait {
         taskFuture
     }
 
-    @Override
     CompletableFuture execute(Map taskVariables) {
         startTime = LocalDateTime.now()
         status = TaskStatus.RUNNING

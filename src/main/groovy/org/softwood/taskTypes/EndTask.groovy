@@ -9,7 +9,7 @@ import java.util.concurrent.CompletableFuture
 @Slf4j
 class EndTask implements TaskTrait {
     String taskType = this.class.getSimpleName()
-    String taskNature = "task"
+    String taskCategory = "task"
 
 
     private Closure tidyUpProcess = {}
@@ -26,13 +26,11 @@ class EndTask implements TaskTrait {
        CompletableFuture.completedFuture("end task completed")
     }
 
-    @Override
     CompletableFuture execute() {
         end()
     }
 
-    @Override
-    CompletableFuture execute(Map inputVariables) {
+     CompletableFuture execute(Map inputVariables) {
         taskVariables ? inputVariables: [:]
         end()  //todo
     }

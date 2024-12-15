@@ -12,7 +12,7 @@ import java.util.function.BiFunction
 @Slf4j
 class ClassDelegateTask implements TaskTrait {
     String taskType = this.class.getSimpleName()
-    String taskNature = "task"
+    String taskCategory = "task"
 
     Closure taskDelegateFunction  //class::bifunc(Map param )
 
@@ -26,7 +26,6 @@ class ClassDelegateTask implements TaskTrait {
 
     }
 
-    @Override
     CompletableFuture execute() {
         startTime = LocalDateTime.now()
         status = TaskStatus.RUNNING
@@ -40,8 +39,7 @@ class ClassDelegateTask implements TaskTrait {
         taskFuture
     }
 
-    @Override
-    CompletableFuture execute(Map taskVariables) {
+     CompletableFuture execute(Map taskVariables) {
         startTime = LocalDateTime.now()
         status = TaskStatus.RUNNING
         log.info "running script with task variables in "

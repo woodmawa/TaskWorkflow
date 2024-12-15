@@ -7,9 +7,9 @@ import java.time.LocalDateTime
 import java.util.concurrent.CompletableFuture
 
 trait TaskTrait implements  Task, Gateway {
-    String taskName
-    String taskType
-    String taskCategory //task or gateway
+    //String taskName
+    //String taskType
+    //String taskCategory //task or gateway
     Map<String, ? extends Object> taskVariables = [:]
     Closure taskInitialisation = {var ->}
     LocalDateTime startTime, endTime
@@ -25,7 +25,7 @@ trait TaskTrait implements  Task, Gateway {
 
     //@Override
     void setTaskName (String name) {
-        taskName = name
+        this.taskName = name
     }
 
     //@Override

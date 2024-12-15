@@ -4,9 +4,11 @@ import groovy.transform.ToString
 import groovy.util.logging.Slf4j
 import groovyjarjarantlr4.v4.runtime.misc.NotNull
 import org.softwood.gatewayTypes.Gateway
+import org.softwood.gatewayTypes.GatewayTaskTrait
 import org.softwood.graph.TaskGraph
 import org.softwood.graph.Vertex
 import org.softwood.processLibrary.ProcessTemplate
+import org.softwood.taskTypes.ExecutableTaskTrait
 import org.softwood.taskTypes.Task
 import org.softwood.taskTypes.TaskTrait
 import org.springframework.beans.factory.annotation.Autowired
@@ -70,7 +72,7 @@ class ProcessInstance {
         // Start the 'start' vertex as root
         graph = fromTemplate.processDefinition
         Vertex head = graph.getHead()
-        processVertex(head, CompletableFuture.completedFuture("process [$processId] started"))
+        processVertex(head, CompletableFuture.completedFuture("process [${processId}] started".toString()))
 
 
         this
@@ -86,29 +88,36 @@ class ProcessInstance {
             return
         }
 
-        Task task = optionalTask.get()
+        TaskTrait task = optionalTask.get()
+        if (task.taskCategory == 'task') {
+            ExecutableTaskTrait etask = task as ExecutableTaskTrait
+            switch ( etask.taskType) {
+                case "StartTask" :
+                    etask.setPreviousTaskResults(Optional.empty(), previousResult)
+                    currentTaskResult = etask.execute()
+                    break
+                case "EndTask" :
+                    etask.setPreviousTaskResults(Optional.of(etask), previousResult)
+                    currentTaskResult = etask.execute()  // Execute and run tidy up
 
-        switch (task.taskType) {
-            case "StartTask":
-                currentTaskResult = task.execute()
-                task.setPreviousTaskResults(Optional.empty(), previousResult)
-            case "EndTask":
-                currentTaskResult = task.execute()  // Execute and run tidy up
-                task.setPreviousTaskResults(Optional.of(task), previousResult)
+                    log.info("End of process [$processId] with variables " + processVariables.toString())
+                    break
+                case "ScriptTask" :
+                    etask.setPreviousTaskResults(Optional.of(etask), previousResult)
+                    currentTaskResult = etask.execute()
+                    break
 
-                log.info("End of process [$processId] with variables " + processVariables.toString())
-                break
-            case "ScriptTask":
-                currentTaskResult= task.execute()
-                task.setPreviousTaskResults(Optional.of(task), previousResult)
+                default :
+                    log.info("Next task [$etask.taskName] is of category  [$etask.taskCategory]")
+                    break
+            }
+        } else if (task.taskCategory == 'gateway') {
+            ExecutableTaskTrait gtask = task as GatewayTaskTrait
+            log.info("Next task [$gtask.taskName] is of category  [$gtask.taskCategory]")
 
-                break
-            default:
-                log.info("Next task is of type [$task.taskType]")
-                //processVertex(nextVertex, currentTaskResult)
-                break
         }
-        handleNextVertices (task, vertex)
+
+        handleNextVertices (vertex, currentTaskResult)
         /*CompletableFuture result = task.execute()
         result.whenComplete { res, throwable ->
             if (throwable != null) {
@@ -120,33 +129,20 @@ class ProcessInstance {
         }*/
     }
 
-    private void handleNextVertices(TaskTrait task, Vertex vertex) {
-        List<Vertex> nextVertices = graph.getToVertices(task.name /*vertex.name*/)
+    private void handleNextVertices(Vertex currentVertex, CompletableFuture previousTaskResult) {
+        List<Vertex> nextVertices = graph.getToVertices(currentVertex.name)
         for (Vertex nextVertex : nextVertices) {
-            if (task instanceof Gateway) {
+            processVertex(nextVertex, previousTaskResult)
+            /*if (task instanceof Gateway) {
                 println "process gateway task "
             } else if ( task instanceof Task) {
                 processVertex(nextVertex, task.execute())
-            }
-
-
-            /*switch (task.taskType) {
-                case "EndTask":
-                    task.execute()  // Execute and run tidy up
-                    log.info("End of process [$processId] with variables " + processVariables.toString())
-                    break
-                case "ScriptTask":
-                    processVertex(nextVertex, task.execute())
-                    break
-                default:
-                    log.info("Next task is of type [$task.taskType]")
-                    processVertex(nextVertex, task.execute())
-                    break
             }*/
+
         }
     }
 
-    /*** deprecate ? */
+    /*** deprecate ?
     private processNextVertices (Task previousTask, CompletableFuture result, List<Vertex> nextVertices) {
         Optional<Task> next
 
@@ -172,6 +168,6 @@ class ProcessInstance {
             }
         }
 
-    }
+    }*/
 
 }

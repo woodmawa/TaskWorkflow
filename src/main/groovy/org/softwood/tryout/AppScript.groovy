@@ -76,17 +76,15 @@ println result2
 
 class X implements TaskTrait {
 
-    @Override
     CompletableFuture execute() {
         return null
     }
 
-    @Override
-    CompletableFuture execute(Map inputVariables) {
+   CompletableFuture execute(Map inputVariables) {
         return null
     }
 
-    @Override
+
     void setTaskType(String name) {
 
     }
