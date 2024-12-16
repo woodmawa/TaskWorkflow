@@ -3,6 +3,9 @@ package org.softwood.graph
 import groovy.transform.EqualsAndHashCode
 import groovy.transform.ToString
 import org.softwood.taskTypes.StartTask
+import org.softwood.taskTypes.TaskCategories
+
+import java.util.function.Predicate
 
 class TaskGraph {
     private Map<Vertex, List<Vertex>> adjVertices = [:]
@@ -53,6 +56,14 @@ class TaskGraph {
     }*/
 
     void addEdge(Vertex v1, Vertex v2) {
+        adjVertices.get(v1).add(v2)
+        adjVertices.get(v2).add(v1)
+        fromVertices.get(v2).add(v1)
+        toVertices.get(v1).add(v2)
+    }
+
+    void addEdgeWithCondition(Vertex v1, Vertex v2, Map conditionMap) {
+        v1.conditionsMap = conditionMap ?: [:]
         adjVertices.get(v1).add(v2)
         adjVertices.get(v2).add(v1)
         fromVertices.get(v2).add(v1)

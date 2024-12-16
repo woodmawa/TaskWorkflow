@@ -6,4 +6,8 @@ import org.softwood.taskTypes.TaskTrait
 trait GatewayTaskTrait extends TaskTrait {
     abstract TaskCategories taskCategory
     abstract String taskType
+
+    def evaluateConditions (def value) {
+        this.evaluateConditions(value)
+    }
 }

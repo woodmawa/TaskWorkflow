@@ -80,7 +80,7 @@ def decision = graph.addVertex("decision", ExclusiveGateway)
 def end = graph.addVertex("end", EndTask)
 graph.addEdge(start, script)
 graph.addEdge(script, decision)
-graph.addEdge(decision, end)
+graph.addEdge(decision, end, [check:{if (it=='Will') true else false}])
 
 /*@Lookup ("processTemplateInstance")
 ProcessTemplate getProcessTemplate () {  //String name, version ="1.0"
@@ -109,6 +109,7 @@ ProcessInstance pi = template.start([var: 'will'])
 
 pi.taskHistory.each  {
     println "completed task : " + it
+
 }
 
 SpringContextUtils::shutdown()

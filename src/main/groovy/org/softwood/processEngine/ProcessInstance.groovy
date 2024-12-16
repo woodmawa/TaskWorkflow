@@ -121,7 +121,9 @@ class ProcessInstance {
                     println "parallel: execute all the outgoing paths "
                     break
                 case "ExclusiveGateway":
+                    gtask.setPreviousTaskResults(Optional.of(previousVertex), previousResult)
                     println "exclusive: evaluate conditions and pick single path to follow "
+                    gtask.evaluateConditions('Will')
                     break
                 case "InclusiveGateway":
                     println "inclusive: pick all paths where condition check is true  "
@@ -135,7 +137,7 @@ class ProcessInstance {
         }
 
         handleNextVertices (vertex, currentTaskResult)
-        /*CompletableFuture result = task.execute()
+        /*
         result.whenComplete { res, throwable ->
             if (throwable != null) {
                 log.error("Task execution failed for vertex [${vertex.name}]", throwable)
