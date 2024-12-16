@@ -74,29 +74,6 @@ while ( gi.hasNext())  {
 println result2
 */
 
-class X implements TaskTrait {
-
-    CompletableFuture execute() {
-        return null
-    }
-
-   CompletableFuture execute(Map inputVariables) {
-        return null
-    }
-
-
-    void setTaskType(String name) {
-
-    }
-
-    @Override
-    String getTaskType() {
-        return null
-    }
-}
-
-//TaskTrait x = new X()
-//x.setTaskName =
 
 //create start-2-stop process
 TaskGraph graph = new TaskGraph()

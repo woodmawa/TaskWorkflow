@@ -72,7 +72,7 @@ class ProcessInstance {
         // Start the 'start' vertex as root
         graph = fromTemplate.processDefinition
         Vertex head = graph.getHead()
-        processVertex(head, CompletableFuture.completedFuture("process [${processId}] started".toString()))
+        processVertex(head, null, CompletableFuture.completedFuture("process [${processId}] started".toString()))
 
 
         this
@@ -80,7 +80,7 @@ class ProcessInstance {
     }
 
     //reworked process sample
-    private void processVertex(Vertex vertex, CompletableFuture previousResult) {
+    private void processVertex(Vertex vertex, Vertex previousVertex, CompletableFuture previousResult) {
         CompletableFuture currentTaskResult
         Optional<Task> optionalTask = taskTypeLookup.getTaskFor(vertex, [taskName: vertex.name])
         if (optionalTask.isEmpty()) {
@@ -90,20 +90,20 @@ class ProcessInstance {
 
         TaskTrait task = optionalTask.get()
         if (task.taskCategory == 'task') {
-            ExecutableTaskTrait etask = task as ExecutableTaskTrait
+            ExecutableTaskTrait etask = task
             switch ( etask.taskType) {
                 case "StartTask" :
-                    etask.setPreviousTaskResults(Optional.empty(), previousResult)
+                    etask.setPreviousTaskResults(Optional.ofNullable(previousVertex), previousResult)
                     currentTaskResult = etask.execute()
                     break
                 case "EndTask" :
-                    etask.setPreviousTaskResults(Optional.of(etask), previousResult)
+                    etask.setPreviousTaskResults(Optional.of(previousVertex), previousResult)
                     currentTaskResult = etask.execute()  // Execute and run tidy up
 
                     log.info("End of process [$processId] with variables " + processVariables.toString())
                     break
                 case "ScriptTask" :
-                    etask.setPreviousTaskResults(Optional.of(etask), previousResult)
+                    etask.setPreviousTaskResults(Optional.of(previousVertex), previousResult)
                     currentTaskResult = etask.execute()
                     break
 
@@ -132,13 +132,7 @@ class ProcessInstance {
     private void handleNextVertices(Vertex currentVertex, CompletableFuture previousTaskResult) {
         List<Vertex> nextVertices = graph.getToVertices(currentVertex.name)
         for (Vertex nextVertex : nextVertices) {
-            processVertex(nextVertex, previousTaskResult)
-            /*if (task instanceof Gateway) {
-                println "process gateway task "
-            } else if ( task instanceof Task) {
-                processVertex(nextVertex, task.execute())
-            }*/
-
+            processVertex(nextVertex, currentVertex, previousTaskResult)
         }
     }
 

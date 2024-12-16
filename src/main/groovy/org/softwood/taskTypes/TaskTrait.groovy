@@ -6,10 +6,10 @@ import java.time.Duration
 import java.time.LocalDateTime
 import java.util.concurrent.CompletableFuture
 
-trait TaskTrait implements  Task, Gateway {
-    //String taskName
-    //String taskType
-    //String taskCategory //task or gateway
+trait TaskTrait implements  Task {
+    String taskName
+    abstract String taskType  //simple name for implementing task class
+    abstract String taskCategory //task or gateway
     Map<String, ? extends Object> taskVariables = [:]
     Closure taskInitialisation = {var ->}
     LocalDateTime startTime, endTime
@@ -17,6 +17,12 @@ trait TaskTrait implements  Task, Gateway {
 
     //for first start task the previous task will be Optional.empty()
     List<List> previousTaskResults = []
+
+    void initialiseRunningTask(Map taskVariables=[:]) {
+        this.taskVariables = taskVariables
+        startTime = LocalDateTime.now()
+        status = TaskStatus.RUNNING
+    }
 
     @Override
     void setPreviousTaskResults (Optional<Task> previousTask, CompletableFuture result) {
@@ -34,11 +40,13 @@ trait TaskTrait implements  Task, Gateway {
     }
 
     //@Override
+    //get from implementing class
     String getTaskType () {
         taskType
     }
 
     //@Override
+    //get from implementing class
     String getTaskCategory () {
         taskCategory
     }

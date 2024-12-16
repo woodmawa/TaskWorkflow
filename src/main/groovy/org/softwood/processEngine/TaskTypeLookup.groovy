@@ -10,30 +10,36 @@ import org.springframework.stereotype.Component
 class TaskTypeLookup {
     Map taskTypeLookup = [:]
 
+    /**
+     * links vertex type with Class to construct
+     */
     TaskTypeLookup () {
-        taskTypeLookup.putIfAbsent( "start",  StartTask )
-        taskTypeLookup.putIfAbsent( "end", EndTask )
-        taskTypeLookup.putIfAbsent( "script",  ScriptTask )
-        taskTypeLookup.putIfAbsent( "classDelegate", ClassDelegateTask)
+        taskTypeLookup.putIfAbsent( StartTask.class.simpleName,  StartTask )
+        taskTypeLookup.putIfAbsent( EndTask.class.simpleName, EndTask )
+        taskTypeLookup.putIfAbsent( ScriptTask.class.simpleName,  ScriptTask )
+        taskTypeLookup.putIfAbsent( ClassDelegateTask.class.simpleName, ClassDelegateTask)
 
         //gateways
-        taskTypeLookup.putIfAbsent( "exclusive}", ExclusiveGateway )
-        taskTypeLookup.putIfAbsent( "inclusive", InclusiveGateway )
-        taskTypeLookup.putIfAbsent( "parallel", ParallelGateway )
+        taskTypeLookup.putIfAbsent( ExclusiveGateway.class.simpleName, ExclusiveGateway )
+        taskTypeLookup.putIfAbsent( InclusiveGateway.class.simpleName, InclusiveGateway )
+        taskTypeLookup.putIfAbsent( ParallelGateway.class.simpleName, ParallelGateway )
 
     }
 
 
     Optional<Task> lookup (Vertex vertex) {
 
-        def taskType = taskTypeLookup[vertex.name.toLowerCase()]
+        def taskType = taskTypeLookup[vertex.type.simpleName]
         Optional.ofNullable (taskType)
     }
 
     Optional<Task> getTaskFor (Vertex vertex, Map initValues=[:]) {
         Optional optionalTask
 
-        Class taskType = taskTypeLookup[vertex.name.toLowerCase()]
+        if (vertex == null)
+            optionalTask = Optional.empty()
+
+        Class taskType = taskTypeLookup[vertex.type.simpleName]
         if (taskType) {
             def object = taskType.getDeclaredConstructor().newInstance()
             if (object){
@@ -41,6 +47,8 @@ class TaskTypeLookup {
                     object["$k"] = v
                 }
             }
+            object["taskName"] = vertex.name
+            //object["taskType"] = vertex.type
             optionalTask = Optional.ofNullable(object)
         }
         else

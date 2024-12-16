@@ -7,7 +7,7 @@ import java.time.LocalDateTime
 import java.util.concurrent.CompletableFuture
 
 @Slf4j
-class EndTask implements TaskTrait {
+class EndTask implements ExecutableTaskTrait {
     String taskType = this.class.getSimpleName()
     String taskCategory = "task"
 

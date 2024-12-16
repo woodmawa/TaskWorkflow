@@ -9,7 +9,7 @@ import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
 
 @Slf4j
-class ScriptTask implements TaskTrait {
+class ScriptTask implements ExecutableTaskTrait {
     String taskType = this.class.getSimpleName()
     String taskCategory = "task"
 

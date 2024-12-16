@@ -2,8 +2,9 @@ package org.softwood.gatewayTypes
 
 import java.util.concurrent.CompletableFuture
 
-class InclusiveGateway {
-    String taskNature = "gateway"
+class InclusiveGateway implements GatewayTaskTrait{
+    String taskType = this.class.getSimpleName()
+    String taskCategory = "gateway"
 
     CompletableFuture previousTaskOutcome
 
