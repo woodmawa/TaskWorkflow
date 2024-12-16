@@ -1,13 +1,14 @@
 package org.softwood.taskTypes
 
+import groovy.transform.ToString
 
 import java.time.LocalDateTime
 import java.util.concurrent.CompletableFuture
 
-
+@ToString (includeNames=true, includes = ["taskName", "taskType", "taskCategory", "status", "startTime", "endTime"])
 class StartTask implements ExecutableTaskTrait {
     String taskType = this.class.getSimpleName()
-    String taskCategory = "task"
+    TaskCategories taskCategory = TaskCategories.Task
 
     CompletableFuture  start () {
         startTime = LocalDateTime.now()

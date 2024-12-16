@@ -1,15 +1,17 @@
 package org.softwood.taskTypes
 
 import groovy.transform.MapConstructor
+import groovy.transform.ToString
 import groovy.util.logging.Slf4j
 
 import java.time.LocalDateTime
 import java.util.concurrent.CompletableFuture
 
 @Slf4j
+@ToString (includeNames=true, includes = ["taskName", "taskType", "taskCategory", "status", "startTime", "endTime"])
 class EndTask implements ExecutableTaskTrait {
     String taskType = this.class.getSimpleName()
-    String taskCategory = "task"
+    TaskCategories taskCategory = TaskCategories.Task
 
 
     private Closure tidyUpProcess = {}

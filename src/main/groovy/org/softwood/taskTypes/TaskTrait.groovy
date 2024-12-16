@@ -9,7 +9,7 @@ import java.util.concurrent.CompletableFuture
 trait TaskTrait implements  Task {
     String taskName
     abstract String taskType  //simple name for implementing task class
-    abstract String taskCategory //task or gateway
+    abstract TaskCategories taskCategory //task or gateway
     Map<String, ? extends Object> taskVariables = [:]
     Closure taskInitialisation = {var ->}
     LocalDateTime startTime, endTime
@@ -47,7 +47,7 @@ trait TaskTrait implements  Task {
 
     //@Override
     //get from implementing class
-    String getTaskCategory () {
+    TaskCategories getTaskCategory () {
         taskCategory
     }
 

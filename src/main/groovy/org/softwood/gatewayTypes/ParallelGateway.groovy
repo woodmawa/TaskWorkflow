@@ -1,10 +1,14 @@
 package org.softwood.gatewayTypes
 
+import groovy.transform.ToString
+import org.softwood.taskTypes.TaskCategories
+
 import java.util.concurrent.CompletableFuture
 
+@ToString (includeNames=true, includes = ["taskName", "taskType", "taskCategory", "status", "startTime", "endTime"])
 class ParallelGateway implements GatewayTaskTrait {
     String taskType = this.class.getSimpleName()
-    String taskCategory = "gateway"
+    TaskCategories taskCategory = TaskCategories.Gateway
 
     CompletableFuture previousTaskOutcome
 

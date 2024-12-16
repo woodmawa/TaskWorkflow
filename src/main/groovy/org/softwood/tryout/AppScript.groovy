@@ -1,8 +1,7 @@
 package org.softwood.tryout
 
-import org.jgrapht.Graph
-import org.jgrapht.graph.DefaultEdge
-import org.jgrapht.traverse.DepthFirstIterator
+
+import org.softwood.gatewayTypes.ExclusiveGateway
 import org.softwood.processEngine.ProcessInstance
 import org.softwood.processEngine.ProcessRuntime
 import org.softwood.processLibrary.ProcessTemplate
@@ -16,8 +15,6 @@ import org.softwood.basics.WorkflowExecutionContextImpl
 
 import org.softwood.graph.TaskGraph
 import org.softwood.processLibrary.StandardProcessTemplateInstance
-import org.softwood.taskTypes.TaskTrait
-import org.springframework.beans.factory.annotation.Lookup
 
 import java.util.concurrent.CompletableFuture
 
@@ -79,9 +76,11 @@ println result2
 TaskGraph graph = new TaskGraph()
 def start = graph.addVertex("start", StartTask)
 def script = graph.addVertex("script", ScriptTask)
+def decision = graph.addVertex("decision", ExclusiveGateway)
 def end = graph.addVertex("end", EndTask)
 graph.addEdge(start, script)
-graph.addEdge(script, end)
+graph.addEdge(script, decision)
+graph.addEdge(decision, end)
 
 /*@Lookup ("processTemplateInstance")
 ProcessTemplate getProcessTemplate () {  //String name, version ="1.0"
@@ -108,7 +107,9 @@ ProcessTemplate template = latest.get()
 
 ProcessInstance pi = template.start([var: 'will'])
 
-
+pi.taskHistory.each  {
+    println "completed task : " + it
+}
 
 SpringContextUtils::shutdown()
 

@@ -1,6 +1,7 @@
 package org.softwood.taskTypes
 
 import groovy.transform.MapConstructor
+import groovy.transform.ToString
 import groovy.util.logging.Slf4j
 
 import java.time.Duration
@@ -9,14 +10,15 @@ import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
 
 @Slf4j
+@ToString (includeNames=true, includes = ["taskName", "taskType", "taskCategory", "status", "startTime", "endTime"])
 class ScriptTask implements ExecutableTaskTrait {
     String taskType = this.class.getSimpleName()
-    String taskCategory = "task"
+    TaskCategories taskCategory = TaskCategories.Task
 
 
     //@Autowired (false) WorkflowExecutionContext taskExecutionContext
 
-    Closure script = {println "hello William"}
+    Closure script = {println "  default: --> hello William"}
 
 
     void setScript (Closure script) {

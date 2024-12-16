@@ -1,6 +1,7 @@
 package org.softwood.taskTypes
 
 import groovy.transform.MapConstructor
+import groovy.transform.ToString
 import groovy.util.logging.Slf4j
 
 import java.time.Duration
@@ -10,9 +11,10 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.function.BiFunction
 
 @Slf4j
-class ClassDelegateTask implements TaskTrait {
+@ToString (includeNames=true, includes = ["taskName", "taskType", "taskCategory", "status", "startTime", "endTime"])
+class ClassDelegateTask implements ExecutableTaskTrait {
     String taskType = this.class.getSimpleName()
-    String taskCategory = "task"
+    TaskCategories taskCategory = TaskCategories.Task
 
     Closure taskDelegateFunction  //class::bifunc(Map param )
 

@@ -1,15 +1,15 @@
 package org.softwood.processEngine
 
+
 import groovy.transform.ToString
 import groovy.util.logging.Slf4j
-import groovyjarjarantlr4.v4.runtime.misc.NotNull
-import org.softwood.gatewayTypes.Gateway
 import org.softwood.gatewayTypes.GatewayTaskTrait
 import org.softwood.graph.TaskGraph
 import org.softwood.graph.Vertex
 import org.softwood.processLibrary.ProcessTemplate
 import org.softwood.taskTypes.ExecutableTaskTrait
 import org.softwood.taskTypes.Task
+import org.softwood.taskTypes.TaskCategories
 import org.softwood.taskTypes.TaskTrait
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.config.ConfigurableBeanFactory
@@ -17,7 +17,6 @@ import org.springframework.context.annotation.Scope
 import org.springframework.stereotype.Component
 
 import java.util.concurrent.CompletableFuture
-import java.util.function.Consumer
 
 @ToString
 @Slf4j
@@ -39,6 +38,9 @@ class ProcessInstance {
     ProcessState status
     Map processVariables
     TaskGraph graph
+
+    List<Task> taskHistory = []
+
 
     ProcessInstance () {
         processVariables = [:]
@@ -89,7 +91,7 @@ class ProcessInstance {
         }
 
         TaskTrait task = optionalTask.get()
-        if (task.taskCategory == 'task') {
+        if (task.taskCategory == TaskCategories.Task) {
             ExecutableTaskTrait etask = task
             switch ( etask.taskType) {
                 case "StartTask" :
@@ -111,9 +113,24 @@ class ProcessInstance {
                     log.info("Next task [$etask.taskName] is of category  [$etask.taskCategory]")
                     break
             }
-        } else if (task.taskCategory == 'gateway') {
-            ExecutableTaskTrait gtask = task as GatewayTaskTrait
-            log.info("Next task [$gtask.taskName] is of category  [$gtask.taskCategory]")
+            taskHistory << etask
+        } else if (task.taskCategory == TaskCategories.Gateway) {
+            GatewayTaskTrait gtask = task
+            switch (gtask.taskType) {
+                case "ParallelGateway":
+                    println "parallel: execute all the outgoing paths "
+                    break
+                case "ExclusiveGateway":
+                    println "exclusive: evaluate conditions and pick single path to follow "
+                    break
+                case "InclusiveGateway":
+                    println "inclusive: pick all paths where condition check is true  "
+                    break
+                default:
+                    log.info("Next task [$gtask.taskName] is of category  [$gtask.taskCategory]")
+                    break
+            }
+            taskHistory << gtask
 
         }
 
@@ -129,39 +146,12 @@ class ProcessInstance {
         }*/
     }
 
+    //optimise with tampoline
     private void handleNextVertices(Vertex currentVertex, CompletableFuture previousTaskResult) {
         List<Vertex> nextVertices = graph.getToVertices(currentVertex.name)
         for (Vertex nextVertex : nextVertices) {
             processVertex(nextVertex, currentVertex, previousTaskResult)
         }
     }
-
-    /*** deprecate ?
-    private processNextVertices (Task previousTask, CompletableFuture result, List<Vertex> nextVertices) {
-        Optional<Task> next
-
-        for ( vertex in nextVertices) {
-            next = taskTypeLookup.getTaskFor(vertex, [taskName:"${vertex.name}"])
-            Task task = next.get()
-            task.setPreviousTaskResults(previousTask, result)
-            switch (task.taskType) {
-                case "EndTask" -> {
-                    task.execute()  //execute and run tidyUp()
-                    log.info("end of process [$processId] with variables " + processVariables.toString())
-                }
-                case "ScriptTask" -> {
-                    result = task.execute()
-                    List<Vertex> vertexList    = graph.getToVertices(task.taskName)
-                    //Optional<Task> optionalTask = taskTypeLookup.getTaskFor(vertexList[0], [taskName: vertexList[0].name])
-                    processNextVertices (task, result, vertexList)
-                }
-                default -> {
-                    println "next task was a $task.taskType"
-                    result = task.execute()
-                }
-            }
-        }
-
-    }*/
 
 }

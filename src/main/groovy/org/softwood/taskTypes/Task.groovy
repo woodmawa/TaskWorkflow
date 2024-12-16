@@ -8,6 +8,6 @@ interface Task<T, R> {
     void setTaskName(String name)
     String getTaskName ()
     String getTaskType()
-    String getTaskCategory()
+    TaskCategories getTaskCategory()
     void setPreviousTaskResults (Optional<Task> currentTask, CompletableFuture previousTaskResult)
 }
