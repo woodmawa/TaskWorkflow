@@ -126,6 +126,7 @@ class ProcessInstance {
                     gtask.setPreviousTaskResults(Optional.of(previousVertex), previousResult)
                     println "exclusive: evaluate conditions and pick single path to follow "
                     def condRes = gtask.evaluateConditions('Will')
+                    log.info "exclusive gateway : evaluated conditions result : " + condRes
                     break
                 case "InclusiveGateway":
                     println "inclusive: pick all paths where condition check is true  "
