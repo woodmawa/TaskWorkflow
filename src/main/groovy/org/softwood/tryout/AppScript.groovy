@@ -80,7 +80,8 @@ def decision = graph.addVertex("decision", ExclusiveGateway)
 def end = graph.addVertex("end", EndTask)
 graph.addEdge(start, script)
 graph.addEdge(script, decision)
-graph.addEdge(decision, end, [check:{if (it=='Will') true else false}])
+Map cond = [check:{if (it=='Will') true else false}]
+graph.addEdgeWithCondition(decision, end, cond )
 
 /*@Lookup ("processTemplateInstance")
 ProcessTemplate getProcessTemplate () {  //String name, version ="1.0"

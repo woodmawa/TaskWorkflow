@@ -5,8 +5,8 @@ import groovy.transform.ToString
 
 import java.util.function.Predicate
 
-@EqualsAndHashCode
-@ToString (excludes = "type")
+@EqualsAndHashCode (includes = "name")
+@ToString (excludes = ["type", "conditionsMap"])
 class Vertex {
     String name
     Class type

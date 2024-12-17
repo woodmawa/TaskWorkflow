@@ -3,7 +3,8 @@ package org.softwood.processEngine
 
 import groovy.transform.ToString
 import groovy.util.logging.Slf4j
-import org.softwood.gatewayTypes.GatewayTaskTrait
+import org.softwood.gatewayTypes.ConditionalGatewayTrait
+import org.softwood.gatewayTypes.GatewayTrait
 import org.softwood.graph.TaskGraph
 import org.softwood.graph.Vertex
 import org.softwood.processLibrary.ProcessTemplate
@@ -115,7 +116,8 @@ class ProcessInstance {
             }
             taskHistory << etask
         } else if (task.taskCategory == TaskCategories.Gateway) {
-            GatewayTaskTrait gtask = task
+            ConditionalGatewayTrait gtask = task
+            gtask.conditionsMap = vertex.conditionsMap
             switch (gtask.taskType) {
                 case "ParallelGateway":
                     println "parallel: execute all the outgoing paths "
@@ -123,7 +125,7 @@ class ProcessInstance {
                 case "ExclusiveGateway":
                     gtask.setPreviousTaskResults(Optional.of(previousVertex), previousResult)
                     println "exclusive: evaluate conditions and pick single path to follow "
-                    gtask.evaluateConditions('Will')
+                    def condRes = gtask.evaluateConditions('Will')
                     break
                 case "InclusiveGateway":
                     println "inclusive: pick all paths where condition check is true  "
