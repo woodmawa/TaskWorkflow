@@ -11,27 +11,26 @@ class StartTask implements ExecutableTaskTrait {
     TaskCategories taskCategory = TaskCategories.Task
 
     CompletableFuture  start () {
-        startTime = LocalDateTime.now()
-        status = TaskStatus.RUNNING
-
-         if (taskInitialisation)
+        if (taskInitialisation)
             taskInitialisation (taskVariables)
         //let  process instance know that start step is complete
 
-        endTime = LocalDateTime.now()
-        status = TaskStatus.COMPLETED
-        CompletableFuture.completedFuture("start task completed")
+        taskResult = CompletableFuture.completedFuture("start task completed")
     }
 
     @Override
     CompletableFuture execute() {
-       start ()
+        setupTask()
+        start ()
+        closeOutTask()
     }
 
     @Override
     CompletableFuture execute(Map inputVariables) {
         taskVariables = inputVariables
+        setupTask()
         start ()
+        closeOutTask()
     }
 
     @Override

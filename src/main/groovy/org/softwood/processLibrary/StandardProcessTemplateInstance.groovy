@@ -2,9 +2,6 @@ package org.softwood.processLibrary
 
 import groovy.transform.ToString
 import groovy.util.logging.Slf4j
-import org.jgrapht.Graph
-import org.jgrapht.graph.DefaultEdge
-import org.jgrapht.graph.SimpleDirectedGraph
 import org.softwood.gatewayTypes.ExclusiveGateway
 import org.softwood.gatewayTypes.JoinGateway
 import org.softwood.graph.TaskGraph
@@ -71,7 +68,7 @@ class StandardProcessTemplateInstance implements ProcessTemplate {
 
 
     @Override
-    ProcessInstance start (Map processVariables=[:]) {
+    ProcessInstance startProcess(Map processVariables=[:]) {
 
         //get prototyped scoped processInstance and set the template to be this, and set processVariales on that instance
         ProcessInstance processInstance = SpringContextUtils.getPrototypeBean(ProcessInstance, [processVariables:processVariables])
@@ -79,7 +76,7 @@ class StandardProcessTemplateInstance implements ProcessTemplate {
         processInstance.setProcessTemplate(this)
 
         log.info  "process " + processInstance.processId + " started "
-        processInstance.start (processVariables)
+        processInstance.execute (processVariables)
     }
 
     static TaskGraph helloWorldProcessDirected () {

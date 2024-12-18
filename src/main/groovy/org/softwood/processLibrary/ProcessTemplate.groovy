@@ -9,6 +9,6 @@ interface ProcessTemplate {
     void setProcessDefinition (TaskGraph definition)
     TaskGraph getProcessDefinition ()
 
-    ProcessInstance start (Map processVariables )
+    ProcessInstance startProcess(Map processVariables )
 
 }

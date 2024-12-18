@@ -17,25 +17,25 @@ class EndTask implements ExecutableTaskTrait {
     private Closure tidyUpProcess = {}
 
     private CompletableFuture  end () {
-        startTime = LocalDateTime.now()
-        status =TaskStatus.RUNNING
-
        //initiate any tidy up actions
        tidyUpProcess (taskVariables)
 
-       endTime = LocalDateTime.now()
-       status = TaskStatus.COMPLETED
-       CompletableFuture.completedFuture("end task completed")
+       taskResult = CompletableFuture.completedFuture("end task completed")
     }
 
     CompletableFuture execute() {
+        setupTask()
         end()
+        closeOutTask()
     }
 
      CompletableFuture execute(Map inputVariables) {
         taskVariables ? inputVariables: [:]
-        end()  //todo
-    }
+         setupTask()
+         end()  //todo
+         closeOutTask()
+
+     }
 
 
     @Override

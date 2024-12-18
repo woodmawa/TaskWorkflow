@@ -1,6 +1,5 @@
 package org.softwood.processEngine
 
-
 import groovy.transform.ToString
 import groovy.util.logging.Slf4j
 import org.softwood.gatewayTypes.ConditionalGatewayTrait
@@ -17,6 +16,7 @@ import org.springframework.beans.factory.config.ConfigurableBeanFactory
 import org.springframework.context.annotation.Scope
 import org.springframework.stereotype.Component
 
+import java.time.LocalDateTime
 import java.util.concurrent.CompletableFuture
 
 @ToString
@@ -39,9 +39,7 @@ class ProcessInstance {
     ProcessState status
     Map processVariables
     TaskGraph graph
-
-    List<Task> taskHistory = []
-
+    LocalDateTime startTime, endTime
 
     ProcessInstance () {
         processVariables = [:]
@@ -53,30 +51,29 @@ class ProcessInstance {
         fromTemplate = template
     }
 
-    ProcessInstance  start (Map processVariables=[:]) {
+    /**
+     * at end of processing - close out and save to history
+     * @return
+     */
+    private ProcessInstance tidyUpProcessAndExit () {
+        status = ProcessState.Completed
+        endTime = LocalDateTime.now()
+
+        ProcessHistory.closedProcesses << this
+        this
+    }
+
+    ProcessInstance execute(Map processVariables=[:]) {
         log.info ("process [$processId] started from template ${fromTemplate.toString()}" )
         this.processVariables = processVariables
+        startTime = LocalDateTime.now()
         status = ProcessState.Running
-
-        //and now start the 'start' vertex as root
-        /*graph = fromTemplate.processDefinition
-        Vertex head = graph.getHead()
-        List<Vertex> nextVertices = graph.getToVertices(head.name)
-        Optional<Task> optionalStart = taskTypeLookup.getTaskFor(head, [taskName: head.name])
-        Task previousTask = optionalStart.get()
-
-        CompletableFuture result
-        optionalStart.ifPresentOrElse({task -> result = task.execute() },
-                                                    {result = new CompletableFuture().complete("task not found")})
-
-        //walk the graph starting each task as required ...
-        processNextVertices (previousTask, result,  nextVertices ) */
 
         // Start the 'start' vertex as root
         graph = fromTemplate.processDefinition
         Vertex head = graph.getHead()
         processVertex(head, null, CompletableFuture.completedFuture("process [${processId}] started".toString()))
-
+        tidyUpProcessAndExit()
 
         this
 
@@ -92,21 +89,23 @@ class ProcessInstance {
         }
 
         TaskTrait task = optionalTask.get()
+        //set this process as parent for the task
+        task.parentProcess = this
         if (task.taskCategory == TaskCategories.Task) {
-            ExecutableTaskTrait etask = task
+            ExecutableTaskTrait etask = task as ExecutableTaskTrait
             switch ( etask.taskType) {
                 case "StartTask" :
-                    etask.setPreviousTaskResults(Optional.ofNullable(previousVertex), previousResult)
+                    etask.setPreviousTaskResults(Optional.empty(), previousResult)
                     currentTaskResult = etask.execute()
                     break
                 case "EndTask" :
-                    etask.setPreviousTaskResults(Optional.of(previousVertex), previousResult)
+                    etask.setPreviousTaskResults(Optional.of(etask), previousResult)
                     currentTaskResult = etask.execute()  // Execute and run tidy up
 
                     log.info("End of process [$processId] with variables " + processVariables.toString())
                     break
                 case "ScriptTask" :
-                    etask.setPreviousTaskResults(Optional.of(previousVertex), previousResult)
+                    etask.setPreviousTaskResults(Optional.of(etask), previousResult)
                     currentTaskResult = etask.execute()
                     break
 
@@ -114,7 +113,6 @@ class ProcessInstance {
                     log.info("Next task [$etask.taskName] is of category  [$etask.taskCategory]")
                     break
             }
-            taskHistory << etask
         } else if (task.taskCategory == TaskCategories.Gateway) {
             ConditionalGatewayTrait gtask = task
             gtask.conditionsMap = vertex.conditionsMap
@@ -135,12 +133,13 @@ class ProcessInstance {
                     log.info("Next task [$gtask.taskName] is of category  [$gtask.taskCategory]")
                     break
             }
-            taskHistory << gtask
 
         }
+        //record that this task was in fact processed by the traversal process
+        TaskHistory.closedTasks << [this.processId, task]
 
         handleNextVertices (vertex, currentTaskResult)
-        /*
+        /*CompletableFuture result = task.execute()
         result.whenComplete { res, throwable ->
             if (throwable != null) {
                 log.error("Task execution failed for vertex [${vertex.name}]", throwable)
@@ -149,9 +148,9 @@ class ProcessInstance {
                 handleNextVertices(task, vertex)
             }
         }*/
+
     }
 
-    //optimise with tampoline
     private void handleNextVertices(Vertex currentVertex, CompletableFuture previousTaskResult) {
         List<Vertex> nextVertices = graph.getToVertices(currentVertex.name)
         for (Vertex nextVertex : nextVertices) {

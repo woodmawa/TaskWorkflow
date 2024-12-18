@@ -1,6 +1,7 @@
 package org.softwood.taskTypes
 
 import org.softwood.gatewayTypes.Gateway
+import org.softwood.processEngine.ProcessInstance
 
 import java.time.Duration
 import java.time.LocalDateTime
@@ -14,6 +15,9 @@ trait TaskTrait implements  Task {
     Closure taskInitialisation = {var ->}
     LocalDateTime startTime, endTime
     TaskStatus status = TaskStatus.PENDING
+    ProcessInstance parentProcess
+    CompletableFuture taskResult
+
 
     //for first start task the previous task will be Optional.empty()
     List<List> previousTaskResults = []
@@ -64,5 +68,18 @@ trait TaskTrait implements  Task {
     String executionDuration () {
         Duration duration = Duration.between(startTime, endTime)
         String formattedDuration =String.format("task execution time: %d ms", duration.toMillis())
+    }
+
+    def setupTask (Map taskVariables=[:]) {
+        this.taskVariables = taskVariables
+        startTime = LocalDateTime.now()
+        status = TaskStatus.RUNNING
+
+    }
+
+    CompletableFuture closeOutTask () {
+        endTime = LocalDateTime.now()
+        status = TaskStatus.COMPLETED
+        taskResult
     }
 }

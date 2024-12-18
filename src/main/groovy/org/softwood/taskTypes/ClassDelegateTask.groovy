@@ -1,7 +1,6 @@
 package org.softwood.taskTypes
 
 import groovy.transform.MapConstructor
-import groovy.transform.ToString
 import groovy.util.logging.Slf4j
 
 import java.time.Duration
@@ -11,8 +10,7 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.function.BiFunction
 
 @Slf4j
-@ToString (includeNames=true, includes = ["taskName", "taskType", "taskCategory", "status", "startTime", "endTime"])
-class ClassDelegateTask implements ExecutableTaskTrait {
+class ClassDelegateTask implements TaskTrait {
     String taskType = this.class.getSimpleName()
     TaskCategories taskCategory = TaskCategories.Task
 
@@ -29,27 +27,21 @@ class ClassDelegateTask implements ExecutableTaskTrait {
     }
 
     CompletableFuture execute() {
-        startTime = LocalDateTime.now()
-        status = TaskStatus.RUNNING
         log.info "running class delegate "
+        setupTask()
 
-        CompletableFuture taskFuture = new CompletableFuture<>()
-        taskFuture.supplyAsync {taskDelegateFunction()}
+        taskResult = new CompletableFuture<>()
+        taskResult.supplyAsync {taskDelegateFunction()}
+        closeOutTask()
 
-        endTime =LocalDateTime.now()
-        status = TaskStatus.COMPLETED
-        taskFuture
-    }
+     }
 
      CompletableFuture execute(Map taskVariables) {
-        startTime = LocalDateTime.now()
-        status = TaskStatus.RUNNING
-        log.info "running script with task variables in "
-        CompletableFuture taskFuture = new CompletableFuture()
-        taskFuture.supplyAsync {taskDelegateFunction(taskVariables)}
-        endTime =LocalDateTime.now()
-        status = TaskStatus.COMPLETED
-        taskFuture
+         log.info "running script with task variables in "
+         setupTask()
+         taskResult = new CompletableFuture()
+         taskResult.supplyAsync {taskDelegateFunction(taskVariables)}
+         closeOutTask()
     }
 
 

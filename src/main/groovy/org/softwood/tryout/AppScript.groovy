@@ -2,8 +2,10 @@ package org.softwood.tryout
 
 
 import org.softwood.gatewayTypes.ExclusiveGateway
+import org.softwood.processEngine.ProcessHistory
 import org.softwood.processEngine.ProcessInstance
 import org.softwood.processEngine.ProcessRuntime
+import org.softwood.processEngine.TaskHistory
 import org.softwood.processLibrary.ProcessTemplate
 import org.softwood.processLibrary.ProcessTemplateLibrary
 import org.softwood.taskTypes.EndTask
@@ -106,11 +108,16 @@ List procs = library.search ("my")
 Optional<ProcessTemplate> latest = library.latest ("myProcess")
 ProcessTemplate template = latest.get()
 
-ProcessInstance pi = template.start([var: 'will'])
+ProcessInstance pi = template.startProcess([var: 'will'])
 
-pi.taskHistory.each  {
-    println "completed task : " + it
+List completedProcess = ProcessHistory.closedProcesses
+completedProcess.each  {
+    println "completed process : " + it
+}
 
+List completedTasks = TaskHistory.closedTasks
+completedProcess.each  {
+    println "completed tasks : " + it
 }
 
 SpringContextUtils::shutdown()
