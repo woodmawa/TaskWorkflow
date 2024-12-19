@@ -6,6 +6,7 @@ import org.softwood.processLibrary.StandardProcessTemplateInstance
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
 
+import java.beans.PropertyChangeListener
 import java.time.LocalDateTime
 
 @Component
@@ -18,11 +19,22 @@ class ProcessRuntime {
     }
     LocalDateTime started = LocalDateTime.now()
     String status = RuntimeStatus.Uninitialised
+    final List runtimeList =[] as ObservableList
 
 
 
     ProcessRuntime () {
         status = RuntimeStatus.Running
+        runtimeList << this  //add self to list
+    }
+
+    void addProcessRuntimeListener (PropertyChangeListener listener) {
+        runtimeList.addPropertyChangeListener {}(listener)
+    }
+
+    void shutdown () {
+        status = RuntimeStatus.Shutdown
+        runtimeList.remove (this)  //fire any property change listeners
     }
 
     @Autowired

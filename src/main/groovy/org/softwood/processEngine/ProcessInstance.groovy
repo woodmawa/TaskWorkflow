@@ -23,6 +23,7 @@ import java.util.concurrent.CompletableFuture
 @Slf4j
 @Component
 @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
+
 class ProcessInstance {
 
     @Autowired
@@ -40,6 +41,7 @@ class ProcessInstance {
     Map processVariables
     TaskGraph graph
     LocalDateTime startTime, endTime
+    List processListeners =[] as ObservableList
 
     ProcessInstance () {
         processVariables = [:]

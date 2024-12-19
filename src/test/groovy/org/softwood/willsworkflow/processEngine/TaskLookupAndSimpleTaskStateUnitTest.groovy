@@ -18,6 +18,8 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.context.ApplicationContext
 import org.springframework.test.context.ContextConfiguration
 
+import java.beans.PropertyChangeListener
+import java.time.LocalDateTime
 import java.util.concurrent.CompletableFuture
 
 //@ExtendWith(SpringExtension.class)
@@ -68,6 +70,15 @@ class TaskLookupAndSimpleTaskStateUnitTest {
         ProcessRuntime rt = applicationContext.getBean("processRuntime")
         assert rt
         assert rt.status == "Running"
+        assert rt.started instanceof LocalDateTime
+
+        def event
+// Listener will assign event to global event variable.
+        def listener = {
+            event = it
+        } as PropertyChangeListener
+
+        rt.addProcessListener {} << listener
 
 
     }
