@@ -20,12 +20,8 @@ import org.softwood.processLibrary.StandardProcessTemplateInstance
 
 import java.util.concurrent.CompletableFuture
 
-//import com.test.ApplicationConfiguration
 
 var ctx = SpringContextUtils::initialise(activeProfile='dev', ["org.softwood.processEngine", "org.softwood.processLibrary", "org.softwood.processBeanConfiguration"])
-
-//ctx.register(ApplicationConfiguration)
-//ctx.refresh()
 
 ProcessRuntime rt = SpringContextUtils::getBean(ProcessRuntime)
 println "process runtime from ctx (status: ${rt.status})> "

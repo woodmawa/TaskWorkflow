@@ -1,13 +1,13 @@
 package org.softwood.willsworkflow.processEngine
 
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.extension.ExtendWith
 import org.softwood.graph.Vertex
 import org.softwood.processEngine.ProcessInstance
 import org.softwood.processEngine.ProcessRuntime
 import org.softwood.processEngine.TaskTypeLookup
 import org.softwood.processLibrary.DefaultProcessLibrary
 import org.softwood.processLibrary.StandardProcessTemplateInstance
+import org.softwood.taskTypes.ExecutableTaskTrait
 import org.softwood.taskTypes.StartTask
 import org.softwood.taskTypes.Task
 import org.softwood.taskTypes.TaskCategories
@@ -16,17 +16,16 @@ import org.softwood.willsworkflow.WillsWorkflowApplication
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.context.ApplicationContext
-import org.springframework.context.annotation.ComponentScan
-import org.springframework.context.annotation.Import
 import org.springframework.test.context.ContextConfiguration
-import org.springframework.util.Assert
+
+import java.util.concurrent.CompletableFuture
 
 //@ExtendWith(SpringExtension.class)
 @SpringBootTest (classes =  [WillsWorkflowApplication.class])
 @ContextConfiguration (classes = [ TaskTypeLookup, ProcessInstance, ProcessRuntime, StandardProcessTemplateInstance, DefaultProcessLibrary])
 
 //@ComponentScan (basePackages = ["org.softwood.willsworkflow","org.softwood.processEngine", "org.softwood.processLibrary", "org.softwood.processBeanConfiguration"])
-class TaskLookupUnitTest {
+class TaskLookupAndSimpleTaskStateUnitTest {
 
     @Autowired
     ApplicationContext applicationContext
@@ -38,11 +37,11 @@ class TaskLookupUnitTest {
     ProcessRuntime rt
 
     @Test
-    void taskLookupTest () {
+    void taskLookupInitialisedStateTest  () {
 
         Vertex start = new Vertex("start-test", StartTask)
-        Optional<Task> lkp = taskTypeLookup.getTaskFor(start, [:])
-        Task task = lkp.get()
+        Optional<ExecutableTaskTrait> lkp = taskTypeLookup.getTaskFor(start, [:])
+        ExecutableTaskTrait task = lkp.get()
         assert task.taskName == "start-test"
         assert task.taskCategory == TaskCategories.Task
         assert task.taskType == StartTask.class.getSimpleName()
@@ -51,14 +50,24 @@ class TaskLookupUnitTest {
         assert task.endTime == null
         assert task.taskVariables == [:]
 
+        CompletableFuture result = task.execute([startTaskState:'dummy'])
+        assert result.get() == "start task completed"
+        assert task.status == TaskStatus.COMPLETED
+        assert task.startTime
+        assert task.endTime
+        assert task.startTime < task.endTime
+        assert result == task.taskResult
+
     }
 
     @Test
     void ContextLoadAndProcessRuntimeInContextUnitTest() {
         assert applicationContext
 
-        def res = applicationContext.getBean("processRuntime")
-        assert res
+        def rt = applicationContext.getBean("processRuntime")
+        assert rt
+
+
     }
 
 }
