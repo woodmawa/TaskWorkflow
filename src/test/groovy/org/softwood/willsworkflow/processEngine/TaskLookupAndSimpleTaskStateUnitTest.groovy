@@ -65,8 +65,9 @@ class TaskLookupAndSimpleTaskStateUnitTest {
     void ContextLoadAndProcessRuntimeInContextUnitTest() {
         assert applicationContext
 
-        def rt = applicationContext.getBean("processRuntime")
+        ProcessRuntime rt = applicationContext.getBean("processRuntime")
         assert rt
+        assert rt.status == "Running"
 
 
     }
