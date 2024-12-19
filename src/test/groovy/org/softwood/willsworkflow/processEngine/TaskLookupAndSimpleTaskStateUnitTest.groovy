@@ -57,6 +57,7 @@ class TaskLookupAndSimpleTaskStateUnitTest {
         assert task.endTime
         assert task.startTime < task.endTime
         assert result == task.taskResult
+        task.taskVariables == [startTaskState:'dummy']
 
     }
 
