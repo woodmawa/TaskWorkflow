@@ -54,7 +54,7 @@ class TaskLookupUnitTest {
     }
 
     @Test
-    void StartTaskUnitTest() {
+    void ContextLoadAndProcessRuntimeInContextUnitTest() {
         assert applicationContext
 
         def res = applicationContext.getBean("processRuntime")
