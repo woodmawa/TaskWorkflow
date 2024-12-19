@@ -16,7 +16,7 @@ import org.springframework.util.Assert
 
 //@ExtendWith(SpringExtension.class)
 @SpringBootTest (classes = WillsWorkflowApplication.class)
-@ComponentScan (basePackages = "org.softwood.processEngine")
+@ComponentScan (basePackageClasses = [org.softwood.processEngine.TaskTypeLookup])
 class TaskLookupUnitTest {
 
     @Autowired

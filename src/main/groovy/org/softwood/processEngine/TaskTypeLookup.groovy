@@ -6,7 +6,9 @@ import org.softwood.taskTypes.*
 import org.softwood.gatewayTypes.*
 import org.springframework.stereotype.Component
 
-@Component
+import javax.naming.Name
+
+@Component ("taskTypeLookup")
 class TaskTypeLookup {
     Map taskTypeLookup = [:]
 
