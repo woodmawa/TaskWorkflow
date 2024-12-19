@@ -8,12 +8,12 @@ import org.springframework.context.annotation.Scope
 
 @Configuration
 class ProcessInstanceConfiguration {
-    @Bean
+    /*@Bean
     @Scope ("prototype")
     public ProcessTemplate processTemplate () {
         StandardProcessTemplateInstance template = new StandardProcessTemplateInstance()
         //spring utils wrapper will add the params after default constructor builds prototype
         template
-    }
+    }*/
 
 }

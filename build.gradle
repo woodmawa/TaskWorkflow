@@ -17,17 +17,33 @@ repositories {
     mavenCentral()
 }
 
+def mockitoVersion = "5.2.0"
+
 dependencies {
+    //testImplementation(libs.mockito)
+
+    //mockitoAgent(libs.mockito) { isTransitive = false }
+    testImplementation "org.mockito:mockito-inline:$mockitoVersion"  // includes "core"
+    testImplementation "org.mockito:mockito-junit-jupiter:$mockitoVersion"
+
     implementation 'org.springframework.boot:spring-boot-starter'
     implementation 'org.apache.groovy:groovy'
     developmentOnly 'org.springframework.boot:spring-boot-devtools'  //hot reloads
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-
+    testImplementation 'org.junit.jupiter:junit-jupiter-api'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
     //graph model using
     implementation group: 'org.jgrapht', name: 'jgrapht-core', version: '1.5.2'
 }
 
-tasks.named('test') {
+test {
     useJUnitPlatform()
+    maxParallelForks(4)
 }
+
+/*tasks {
+    test {
+        jvmArgs("-javaagent:${mockitoAgent.asPath}")
+    }
+}*/

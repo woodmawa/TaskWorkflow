@@ -1,5 +1,6 @@
 package org.softwood.taskTypes
 
+import java.time.LocalDateTime
 import java.util.concurrent.CompletableFuture
 
 interface Task<T, R> {
@@ -9,5 +10,9 @@ interface Task<T, R> {
     String getTaskName ()
     String getTaskType()
     TaskCategories getTaskCategory()
+    TaskStatus getStatus ()
+    LocalDateTime getStartTime()
+    LocalDateTime getEndTime()
+
     void setPreviousTaskResults (Optional<Task> currentTask, CompletableFuture previousTaskResult)
 }

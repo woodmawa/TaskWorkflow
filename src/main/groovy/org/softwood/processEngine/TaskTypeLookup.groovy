@@ -1,5 +1,6 @@
 package org.softwood.processEngine
 
+import groovy.util.logging.Slf4j
 import org.codehaus.groovy.runtime.InvokerHelper
 import org.softwood.graph.*
 import org.softwood.taskTypes.*
@@ -9,6 +10,7 @@ import org.springframework.stereotype.Component
 import javax.naming.Name
 
 @Component ("taskTypeLookup")
+@Slf4j
 class TaskTypeLookup {
     Map taskTypeLookup = [:]
 

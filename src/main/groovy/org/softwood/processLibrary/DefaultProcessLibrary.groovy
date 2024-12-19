@@ -7,7 +7,7 @@ import org.springframework.stereotype.Component
 import java.time.LocalDateTime
 import java.util.concurrent.ConcurrentHashMap
 
-@Component
+@Component ("processLibrary")
 @Qualifier ("default")
 @Slf4j
 class DefaultProcessLibrary implements ProcessTemplateLibrary {
