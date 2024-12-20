@@ -39,10 +39,6 @@ class ClassDelegateTask implements TaskTrait {
          log.info "running script with task variables in "
          taskResourceProcessor (ClassDelegateTask::run, taskVariables)
 
-         setupTask()
-         taskResult = new CompletableFuture()
-         taskResult.supplyAsync {taskDelegateFunction(taskVariables)}
-         closeOutTask()
     }
 
 
