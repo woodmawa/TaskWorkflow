@@ -22,11 +22,6 @@ trait TaskTrait implements  Task {
     //for first start task the previous task will be Optional.empty()
     List<List> previousTaskResults = []
 
-    void initialiseRunningTask(Map taskVariables=[:]) {
-        this.taskVariables = taskVariables
-        startTime = LocalDateTime.now()
-        status = TaskStatus.RUNNING
-    }
 
     @Override
     void setPreviousTaskResults (Optional<Task> previousTask, CompletableFuture result) {
@@ -70,16 +65,43 @@ trait TaskTrait implements  Task {
         String formattedDuration =String.format("task execution time: %d ms", duration.toMillis())
     }
 
-    def setupTask (Map taskVariables=[:]) {
+    /**
+     * sets up state for running task
+     * @param state
+     * @param taskVariables
+     * @return
+     */
+    def setupTask (TaskStatus state, Map taskVariables=[:]) {
         this.taskVariables = taskVariables
         startTime = LocalDateTime.now()
-        status = TaskStatus.RUNNING
+        status = state
 
     }
 
-    CompletableFuture closeOutTask () {
+    /**
+     * closes down state for running task
+     * @param state
+     * @return
+     */
+    CompletableFuture closeOutTask (TaskStatus state) {
         endTime = LocalDateTime.now()
-        status = TaskStatus.COMPLETED
+        status = state
         taskResult
+    }
+
+    /**
+     * surround method - that setsup the task state, runs the task and exits and tides up
+     * @param action
+     * @param inputVariables
+     * @return
+     */
+    def taskResourceProcessor (Closure action, Map inputVariables = null) {
+        try {
+            setupTask(TaskStatus.RUNNING)
+            action?.call (this, inputVariables)
+            closeOutTask (TaskStatus.COMPLETED)
+        } catch (Exception exception) {
+            closeOutTask(TaskStatus.EXCEPTION)
+        }
     }
 }

@@ -6,7 +6,9 @@ import org.softwood.processLibrary.StandardProcessTemplateInstance
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
 
+import java.beans.PropertyChangeEvent
 import java.beans.PropertyChangeListener
+import java.beans.PropertyChangeSupport
 import java.time.LocalDateTime
 
 @Component
@@ -18,41 +20,62 @@ class ProcessRuntime {
         Shutdown
     }
     LocalDateTime started = LocalDateTime.now()
-    String status = RuntimeStatus.Uninitialised
-    final List runtimeList =[] as ObservableList
+    RuntimeStatus status = RuntimeStatus.Uninitialised
+    final List<PropertyChangeListener> runtimeListeners =[]
 
+    private PropertyChangeSupport support
 
 
     ProcessRuntime () {
+        support = new PropertyChangeSupport(this)
         status = RuntimeStatus.Running
-        runtimeList << this  //add self to list
     }
 
-    void addProcessRuntimeListener (PropertyChangeListener listener) {
-        runtimeList.addPropertyChangeListener {}(listener)
+    void addRuntimeListener (PropertyChangeListener listener) {
+        support.addPropertyChangeListener(listener)
+    }
+
+    void removeRuntimeListener (PropertyChangeListener listener) {
+        support.removePropertyChangeListener (listener)
+    }
+
+    private void setStatus(RuntimeStatus newStatus) {
+        RuntimeStatus oldStatus = this.status
+        this.status = newStatus
+        support.firePropertyChange("status", oldStatus, newStatus)
     }
 
     void shutdown () {
-        status = RuntimeStatus.Shutdown
-        runtimeList.remove (this)  //fire any property change listeners
+        setStatus (RuntimeStatus.Shutdown)
+        support.firePropertyChange(new PropertyChangeEvent("status", status, RuntimeStatus.Shutdown))
     }
 
     @Autowired
     ProcessTemplateLibrary processLibrary
 
-    void startProcess (String processTemplateName) {
+    ProcessInstance startProcess (String processTemplateName) {
 
-        ProcessInstance processInstance = new ProcessInstance ('standard')
-        //todo lookup process in library
-        if (processTemplateName == 'standard') {
-            //todo refactor later
-            processInstance = StandardProcessTemplateInstance.helloWorldProcess2()
+        ProcessInstance processInstance
 
-        } else {
-            //todo add search to interface
-            // processLibrary.search (processTemplateName)
+        if (!processTemplateName) {
+            throw new IllegalArgumentException("Process template name cannot be null or empty")
         }
 
+        processInstance = createProcessInstance(processTemplateName)
+        log.info("Started process with template: ${processTemplateName}")
+        return processInstance
+
+    }
+
+    private ProcessInstance createProcessInstance(String processTemplateName) {
+        switch (processTemplateName.toLowerCase()) {
+            case 'standard':
+                return StandardProcessTemplateInstance.helloWorldProcess2()
+            default:
+                // TODO: Implement process library search
+                // return processLibrary.search(processTemplateName)
+                throw new UnsupportedOperationException("Process template not supported: ${processTemplateName}")
+        }
     }
 }
 

@@ -1,12 +1,9 @@
 package org.softwood.taskTypes
 
-import groovy.transform.MapConstructor
+
 import groovy.util.logging.Slf4j
 
-import java.time.Duration
-import java.time.LocalDateTime
 import java.util.concurrent.CompletableFuture
-import java.util.concurrent.ConcurrentHashMap
 import java.util.function.BiFunction
 
 @Slf4j
@@ -26,18 +23,22 @@ class ClassDelegateTask implements TaskTrait {
 
     }
 
+    def run(Map taskVariables=[:]) {
+        taskResult = new CompletableFuture<>()
+        taskResult.supplyAsync {taskDelegateFunction(new Binding (taskVariables))}
+    }
+
     CompletableFuture execute() {
         log.info "running class delegate "
-        setupTask()
 
-        taskResult = new CompletableFuture<>()
-        taskResult.supplyAsync {taskDelegateFunction()}
-        closeOutTask()
+        taskResourceProcessor (ClassDelegateTask::run)
 
      }
 
      CompletableFuture execute(Map taskVariables) {
          log.info "running script with task variables in "
+         taskResourceProcessor (ClassDelegateTask::run, taskVariables)
+
          setupTask()
          taskResult = new CompletableFuture()
          taskResult.supplyAsync {taskDelegateFunction(taskVariables)}

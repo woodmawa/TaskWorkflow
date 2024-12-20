@@ -24,16 +24,14 @@ class EndTask implements ExecutableTaskTrait {
     }
 
     CompletableFuture execute() {
-        setupTask()
-        end()
-        closeOutTask()
+        taskResourceProcessor (EndTask::end)
+
     }
 
      CompletableFuture execute(Map inputVariables) {
         taskVariables ? inputVariables: [:]
-         setupTask()
-         end()  //todo
-         closeOutTask()
+         taskResourceProcessor (EndTask::end)
+
 
      }
 

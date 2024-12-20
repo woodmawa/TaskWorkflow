@@ -52,7 +52,7 @@ class TaskLookupAndSimpleTaskStateUnitTest {
         assert task.endTime == null
         assert task.taskVariables == [:]
 
-        CompletableFuture result = task.execute([startTaskState:'dummy'])
+        CompletableFuture result = task.execute(startTaskState:'dummy')
         assert result.get() == "start task completed"
         assert task.status == TaskStatus.COMPLETED
         assert task.startTime
@@ -78,7 +78,7 @@ class TaskLookupAndSimpleTaskStateUnitTest {
             event = it
         } as PropertyChangeListener
 
-        rt.addProcessListener {} << listener
+        //rt.addProcessListener {} << listener
 
 
     }

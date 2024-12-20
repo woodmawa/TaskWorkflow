@@ -18,19 +18,19 @@ class StartTask implements ExecutableTaskTrait {
         taskResult = CompletableFuture.completedFuture("start task completed")
     }
 
+    CompletableFuture  start (Map variables) {
+        taskVariables = variables ?: taskVariables
+        start()
+    }
+
     @Override
     CompletableFuture execute() {
-        setupTask()
-        start ()
-        closeOutTask()
+        taskResourceProcessor (StartTask::start)
     }
 
     @Override
     CompletableFuture execute(Map inputVariables) {
-        taskVariables = inputVariables
-        setupTask()
-        start ()
-        closeOutTask()
+        taskResourceProcessor (StartTask::start, inputVariables)
     }
 
     @Override
