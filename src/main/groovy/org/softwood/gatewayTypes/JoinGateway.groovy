@@ -8,4 +8,19 @@ class JoinGateway implements GatewayTrait {
     String taskType = this.class.getSimpleName()
     TaskCategories taskCategory = TaskCategories.Gateway
 
+    private def run (value) {
+        //tbc
+        List out = []
+        int counter = 0
+        List previous = previousTaskResults
+        previous.each { Map.Entry<String, Closure> entry ->
+            out << [++counter, entry.getKey(), entry.getValue()?.call(value)]
+        }
+        out
+    }
+
+    def evaluateConditions (value ) {
+        gatewayResourceProcessor (JoinGateway::run, value)
+
+    }
 }

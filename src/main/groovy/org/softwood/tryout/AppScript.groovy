@@ -2,6 +2,7 @@ package org.softwood.tryout
 
 
 import org.softwood.gatewayTypes.ExclusiveGateway
+import org.softwood.gatewayTypes.ParallelGateway
 import org.softwood.processEngine.ProcessHistory
 import org.softwood.processEngine.ProcessInstance
 import org.softwood.processEngine.ProcessRuntime
@@ -75,11 +76,25 @@ TaskGraph graph = new TaskGraph()
 def start = graph.addVertex("start", StartTask)
 def script = graph.addVertex("script", ScriptTask)
 def decision = graph.addVertex("decision", ExclusiveGateway)
+def par = graph.addVertex("decision", ExclusiveGateway)
 def end = graph.addVertex("end", EndTask)
 graph.addEdge(start, script)
 graph.addEdge(script, decision)
 Map cond = [check:{if (it=='Will') true else false}]
 graph.addEdgeWithCondition(decision, end, cond )
+
+TaskGraph graph2 = new TaskGraph()
+def start2 = graph2.addVertex("start", StartTask)
+def script2 = graph2.addVertex("script", ScriptTask)
+def par2 = graph2.addVertex("fork", ParallelGateway)
+def end2 = graph2.addVertex("end", EndTask)
+def leftfork2 = graph2.addVertex("leftFork", EndTask)
+def rightfork2 = graph2.addVertex("rightFork", EndTask)
+graph2.addEdge(start2, script2)
+graph2.addEdge(script2, par2)
+graph2.addEdge(par2, leftfork2)
+graph2.addEdge(par2, rightfork2)
+
 
 /*@Lookup ("processTemplateInstance")
 ProcessTemplate getProcessTemplate () {  //String name, version ="1.0"
@@ -94,17 +109,23 @@ ProcessTemplate t2 = SpringContextUtils.getPrototypeBean(ProcessTemplate, [name:
 ProcessTemplate procDef = SpringContextUtils.getPrototypeBean(ProcessTemplate, [name:"myProcess", version:"1.0", processDefinition:graph])
 ProcessTemplate procDef2 =SpringContextUtils.getPrototypeBean(ProcessTemplate, [name:"myProcess", version:"2.0", processDefinition:graph])
 ProcessTemplate procDef3 =SpringContextUtils.getPrototypeBean(ProcessTemplate, [name:"mySecondProcess", version:"1.0", processDefinition:graph])
+ProcessTemplate procDef4 =SpringContextUtils.getPrototypeBean(ProcessTemplate, [name:"gatewayProcess", version:"1.0", processDefinition:graph2])
 
 
 library.add (procDef)
 library.add (procDef2)
 library.add (procDef3)
+library.add (procDef4)
 
 List procs = library.search ("my")
 Optional<ProcessTemplate> latest = library.latest ("myProcess")
+Optional<ProcessTemplate> latestGw = library.latest ("gatewayProcess")
 ProcessTemplate template = latest.get()
+ProcessTemplate template2 = latestGw.get()
 
-ProcessInstance pi = template.startProcess([var: 'will'])
+//ProcessInstance pi = template.startProcess([var: 'will'])
+ProcessInstance pi = template2.startProcess([var: 'will'])
+
 
 List completedProcess = ProcessHistory.closedProcesses
 completedProcess.each  {

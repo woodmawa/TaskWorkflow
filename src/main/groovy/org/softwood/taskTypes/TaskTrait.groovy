@@ -104,4 +104,14 @@ trait TaskTrait implements  Task {
             closeOutTask(TaskStatus.EXCEPTION)
         }
     }
+
+    def gatewayResourceProcessor (Closure action, inputVariables = null) {
+        try {
+            setupTask(TaskStatus.RUNNING)
+            action?.call (this, inputVariables)
+            closeOutTask (TaskStatus.COMPLETED)
+        } catch (Exception exception) {
+            closeOutTask(TaskStatus.EXCEPTION)
+        }
+    }
 }

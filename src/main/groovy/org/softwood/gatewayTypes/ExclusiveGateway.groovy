@@ -13,17 +13,18 @@ class ExclusiveGateway implements ConditionalGatewayTrait {
     Map<String, Closure> conditionsMap = [:]
     def conditionsEvaluationResults
 
-    def evaluateConditions (def value ) {
-        status = TaskStatus.COMPLETED
-        startTime = LocalDateTime.now()
+    private def run (value) {
+        //tbc
         List out = []
         int counter = 0
         conditionsMap.each { Map.Entry<String, Closure> entry ->
-             out << [++counter, entry.getKey(), entry.getValue()?.call(value)]
+            out << [++counter, entry.getKey(), entry.getValue()?.call(value)]
         }
-        endTime = LocalDateTime.now()
-        this.status = TaskStatus.COMPLETED
         conditionsEvaluationResults = out
+    }
+
+    def evaluateConditions (value ) {
+        gatewayResourceProcessor (ExclusiveGateway::run, value)
 
     }
 }

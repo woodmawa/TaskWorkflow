@@ -10,6 +10,21 @@ class ParallelGateway implements GatewayTrait {
     String taskType = this.class.getSimpleName()
     TaskCategories taskCategory = TaskCategories.Gateway
 
-    CompletableFuture previousTaskOutcome
+
+    private def run () {
+        //tbc
+        List out = []
+        int counter = 0
+        List previous = previousTaskResults
+        previous.each { Map.Entry<String, Closure> entry ->
+            out << [++counter, entry.getKey(), entry.getValue()]
+        }
+        out
+    }
+
+    def evaluateConditions (value ) {
+        gatewayResourceProcessor (JoinGateway::run)
+
+    }
 
 }
