@@ -23,7 +23,7 @@ class ClassDelegateTask implements TaskTrait {
 
     }
 
-    def run(Map taskVariables=[:]) {
+    private def run(Map taskVariables=[:]) {
         taskResult = new CompletableFuture<>()
         taskResult.supplyAsync {taskDelegateFunction(new Binding (taskVariables))}
     }

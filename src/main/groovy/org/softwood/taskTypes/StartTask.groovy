@@ -10,17 +10,11 @@ class StartTask implements ExecutableTaskTrait {
     String taskType = this.class.getSimpleName()
     TaskCategories taskCategory = TaskCategories.Task
 
-    CompletableFuture  start () {
+    private CompletableFuture  start (Map variables = [:]) {
+        taskVariables = variables ?: taskVariables
         if (taskInitialisation)
             taskInitialisation (taskVariables)
-        //let  process instance know that start step is complete
-
         taskResult = CompletableFuture.completedFuture("start task completed")
-    }
-
-    CompletableFuture  start (Map variables) {
-        taskVariables = variables ?: taskVariables
-        start()
     }
 
     @Override

@@ -14,6 +14,7 @@ class EndTask implements ExecutableTaskTrait {
     TaskCategories taskCategory = TaskCategories.Task
 
 
+    //any private tidy up actions for an end task can be run via this closure
     private Closure tidyUpProcess = {}
 
     private CompletableFuture  end () {
@@ -25,14 +26,11 @@ class EndTask implements ExecutableTaskTrait {
 
     CompletableFuture execute() {
         taskResourceProcessor (EndTask::end)
-
     }
 
      CompletableFuture execute(Map inputVariables) {
         taskVariables ? inputVariables: [:]
          taskResourceProcessor (EndTask::end)
-
-
      }
 
 

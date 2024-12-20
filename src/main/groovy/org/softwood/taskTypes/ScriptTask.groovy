@@ -20,7 +20,7 @@ class ScriptTask implements TaskTrait {
         this.script = script
     }
 
-    def run(Map taskVariables=[:]) {
+    private def run(Map taskVariables=[:]) {
         taskResult = new CompletableFuture<>()
         taskResult.supplyAsync {script(new Binding (taskVariables))}
     }
