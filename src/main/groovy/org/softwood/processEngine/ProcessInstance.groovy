@@ -4,6 +4,7 @@ import groovy.transform.ToString
 import groovy.util.logging.Slf4j
 import org.softwood.gatewayTypes.ConditionalGatewayTrait
 import org.softwood.gatewayTypes.GatewayTrait
+import org.softwood.gatewayTypes.ParallelGateway
 import org.softwood.graph.TaskGraph
 import org.softwood.graph.Vertex
 import org.softwood.processLibrary.ProcessTemplate
@@ -33,6 +34,7 @@ class ProcessInstance {
         Pending,
         Running,
         Suspended,
+        Closing,
         Completed
     }
     UUID processId
@@ -41,7 +43,7 @@ class ProcessInstance {
     Map processVariables
     TaskGraph graph
     LocalDateTime startTime, endTime
-    List processListeners =[] as ObservableList
+    Closure lastGasp = {}
 
     ProcessInstance () {
         processVariables = [:]
@@ -57,11 +59,15 @@ class ProcessInstance {
      * at end of processing - close out and save to history
      * @return
      */
-    private ProcessInstance tidyUpProcessAndExit () {
-        status = ProcessState.Completed
+    ProcessInstance tidyUpProcessAndExit () {
+        status = ProcessState.Closing
         endTime = LocalDateTime.now()
+        if (lastGasp)
+            lastGasp()
 
         ProcessHistory.closedProcesses << this
+
+        status = ProcessState.Completed
         this
     }
 
@@ -74,8 +80,8 @@ class ProcessInstance {
         // Start the 'start' vertex as root
         graph = fromTemplate.processDefinition
         Vertex head = graph.getHead()
-        processVertex(head, null, CompletableFuture.completedFuture("process [${processId}] started".toString()))
-        tidyUpProcessAndExit()
+        CompletableFuture freshStart = CompletableFuture.completedFuture("process [${processId}] started".toString())
+        processVertex(head, null, freshStart)
 
         this
 
@@ -93,21 +99,24 @@ class ProcessInstance {
         TaskTrait task = optionalTask.get()
         //set this process as parent for the task
         task.parentProcess = this
+        task.setPreviousTaskResults(Optional.of(task), previousResult)
         if (task.taskCategory == TaskCategories.Task) {
-            ExecutableTaskTrait etask = task as ExecutableTaskTrait
+            ExecutableTaskTrait etask = task
             switch ( etask.taskType) {
                 case "StartTask" :
+                    //if first start task - then set previous task result with optional empty
                     etask.setPreviousTaskResults(Optional.empty(), previousResult)
                     currentTaskResult = etask.execute()
                     break
                 case "EndTask" :
-                    etask.setPreviousTaskResults(Optional.of(etask), previousResult)
                     currentTaskResult = etask.execute()  // Execute and run tidy up
 
                     log.info("End of process [$processId] with variables " + processVariables.toString())
                     break
                 case "ScriptTask" :
-                    etask.setPreviousTaskResults(Optional.of(etask), previousResult)
+                    currentTaskResult = etask.execute()
+                    break
+                case "TerminateTask":
                     currentTaskResult = etask.execute()
                     break
 
@@ -116,23 +125,34 @@ class ProcessInstance {
                     break
             }
         } else if (task.taskCategory == TaskCategories.Gateway) {
-            ConditionalGatewayTrait gtask = task
-            gtask.conditionsMap = vertex.conditionsMap
-            switch (gtask.taskType) {
+            switch (task.taskType) {
                 case "ParallelGateway":
                     println "parallel: execute all the outgoing paths "
+                    ParallelGateway forkTask = task
+                    forkTask.fork()     //start all paths out from
+                    List<Vertex> forkedTasks = forkTask.forkedTasks()
+                    for (taskVertex in forkedTasks ){
+                        //may work below and not be necessary
+                    }
+
                     break
                 case "ExclusiveGateway":
-                    gtask.setPreviousTaskResults(Optional.of(previousVertex), previousResult)
+                    ConditionalGatewayTrait cgtask = task
+                    cgtask.conditionsMap = vertex.conditionsMap
+                    cgtask.setPreviousTaskResults(Optional.of(previousVertex), previousResult)
                     println "exclusive: evaluate conditions and pick single path to follow "
-                    def condRes = gtask.evaluateConditions('Will')
+                    def condRes = cgtask.evaluateConditions('Will')
                     log.info "exclusive gateway : evaluated conditions result : " + condRes
                     break
                 case "InclusiveGateway":
                     println "inclusive: pick all paths where condition check is true  "
+                    ConditionalGatewayTrait cgtask = task
+                    cgtask.conditionsMap = vertex.conditionsMap
+                    cgtask.setPreviousTaskResults(Optional.of(previousVertex), previousResult)
+
                     break
                 default:
-                    log.info("Next task [$gtask.taskName] is of category  [$gtask.taskCategory]")
+                    log.info("Next Gateway task [$task.taskName] is of category  [$task.taskCategory]")
                     break
             }
 
@@ -140,7 +160,8 @@ class ProcessInstance {
         //record that this task was in fact processed by the traversal process
         TaskHistory.closedTasks << [this.processId, task]
 
-        handleNextVertices (vertex, currentTaskResult)
+        if (status != ProcessState.Completed)
+            handleNextVertices (vertex, currentTaskResult)
         /*CompletableFuture result = task.execute()
         result.whenComplete { res, throwable ->
             if (throwable != null) {
@@ -154,6 +175,7 @@ class ProcessInstance {
     }
 
     private void handleNextVertices(Vertex currentVertex, CompletableFuture previousTaskResult) {
+        log.info "processing process graph vertex '${currentVertex.name}'"
         List<Vertex> nextVertices = graph.getToVertices(currentVertex.name)
         for (Vertex nextVertex : nextVertices) {
             processVertex(nextVertex, currentVertex, previousTaskResult)

@@ -1,5 +1,6 @@
 package org.softwood.taskTypes
 
+import groovy.util.logging.Slf4j
 import org.softwood.gatewayTypes.Gateway
 import org.softwood.processEngine.ProcessInstance
 
@@ -7,6 +8,7 @@ import java.time.Duration
 import java.time.LocalDateTime
 import java.util.concurrent.CompletableFuture
 
+@Slf4j
 trait TaskTrait implements  Task {
     String taskName
     abstract String taskType  //simple name for implementing task class
@@ -22,6 +24,10 @@ trait TaskTrait implements  Task {
     //for first start task the previous task will be Optional.empty()
     List<List> previousTaskResults = []
 
+
+    ProcessInstance getParentInstance () {
+        parentProcess
+    }
 
     @Override
     void setPreviousTaskResults (Optional<Task> previousTask, CompletableFuture result) {
@@ -101,6 +107,7 @@ trait TaskTrait implements  Task {
             action?.call (this, inputVariables)
             closeOutTask (TaskStatus.COMPLETED)
         } catch (Exception exception) {
+            log.info "TaskTrait: task resource, action.doCall threw exception $exception with delegate set as $action.delegate"
             closeOutTask(TaskStatus.EXCEPTION)
         }
     }
@@ -111,6 +118,7 @@ trait TaskTrait implements  Task {
             action?.call (this, inputVariables)
             closeOutTask (TaskStatus.COMPLETED)
         } catch (Exception exception) {
+            log.info "TaskTrait: gateway resource, action.doCall threw exception $exception with delegate set as $action.delegate"
             closeOutTask(TaskStatus.EXCEPTION)
         }
     }

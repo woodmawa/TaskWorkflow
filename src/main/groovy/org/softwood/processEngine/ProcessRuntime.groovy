@@ -20,7 +20,7 @@ class ProcessRuntime {
         Shutdown
     }
     LocalDateTime started = LocalDateTime.now()
-    RuntimeStatus status = RuntimeStatus.Uninitialised
+    private RuntimeStatus status = RuntimeStatus.Uninitialised
     final List<PropertyChangeListener> runtimeListeners =[]
 
     private PropertyChangeSupport support
@@ -39,10 +39,14 @@ class ProcessRuntime {
         support.removePropertyChangeListener (listener)
     }
 
-    private void setStatus(RuntimeStatus newStatus) {
+    void setStatus(RuntimeStatus newStatus) {
         RuntimeStatus oldStatus = this.status
         this.status = newStatus
         support.firePropertyChange("status", oldStatus, newStatus)
+    }
+
+    RuntimeStatus getStatus () {
+        status
     }
 
     void shutdown () {

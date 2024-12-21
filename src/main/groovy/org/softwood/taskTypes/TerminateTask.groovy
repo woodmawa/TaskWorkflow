@@ -1,30 +1,34 @@
 package org.softwood.taskTypes
 
 import groovy.transform.ToString
+import groovy.util.logging.Slf4j
+import org.softwood.processEngine.ProcessInstance
 
-import java.time.LocalDateTime
 import java.util.concurrent.CompletableFuture
 
+@Slf4j
 @ToString (includeNames=true, includes = ["taskName", "taskType", "taskCategory", "status", "startTime", "endTime"])
-class StartTask implements ExecutableTaskTrait {
+class TerminateTask implements ExecutableTaskTrait {
     String taskType = this.class.getSimpleName()
     TaskCategories taskCategory = TaskCategories.Task
 
-    private CompletableFuture  start (Map variables = [:]) {
+    private CompletableFuture  terminate (Map variables = [:]) {
         taskVariables = variables ?: taskVariables
         if (taskInitialisation)
             taskInitialisation (taskVariables)
-        taskResult = CompletableFuture.completedFuture("start task '$taskName' completed")
+        parentInstance.tidyUpProcessAndExit()
+        log.info "TerminateTask: terminated process ${parentInstance.getProcessId()}, and exit "
+        taskResult = CompletableFuture.completedFuture("terminate complete process task '$taskName' completed")
     }
 
     @Override
     CompletableFuture execute() {
-        taskResourceProcessor (StartTask::start)
+        taskResourceProcessor (TerminateTask::terminate )
     }
 
     @Override
     CompletableFuture execute(Map inputVariables) {
-        taskResourceProcessor (StartTask::start, inputVariables)
+        taskResourceProcessor (TerminateTask::terminate, inputVariables)
     }
 
     @Override

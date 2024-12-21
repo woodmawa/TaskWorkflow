@@ -6,7 +6,7 @@ import groovy.util.logging.Slf4j
 import java.util.concurrent.CompletableFuture
 
 @Slf4j
-class ScriptTask implements TaskTrait {
+class ScriptTask implements ExecutableTaskTrait {
     String taskType = this.class.getSimpleName()
     TaskCategories taskCategory = TaskCategories.Task
 
@@ -27,7 +27,7 @@ class ScriptTask implements TaskTrait {
 
 
     CompletableFuture execute() {
-        log.info "running script "
+        log.info "running scriptTask Script  "
         taskResourceProcessor (ScriptTask::run)
 
         /*setupTask()

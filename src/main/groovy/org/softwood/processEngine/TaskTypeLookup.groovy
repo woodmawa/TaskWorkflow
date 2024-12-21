@@ -20,6 +20,7 @@ class TaskTypeLookup {
     TaskTypeLookup () {
         taskTypeLookup.putIfAbsent( StartTask.class.simpleName,  StartTask )
         taskTypeLookup.putIfAbsent( EndTask.class.simpleName, EndTask )
+        taskTypeLookup.putIfAbsent( TerminateTask.class.simpleName, TerminateTask )
         taskTypeLookup.putIfAbsent( ScriptTask.class.simpleName,  ScriptTask )
         taskTypeLookup.putIfAbsent( ClassDelegateTask.class.simpleName, ClassDelegateTask)
 

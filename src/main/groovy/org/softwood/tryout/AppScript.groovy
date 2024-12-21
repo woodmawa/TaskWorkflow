@@ -18,6 +18,7 @@ import org.softwood.basics.WorkflowExecutionContextImpl
 
 import org.softwood.graph.TaskGraph
 import org.softwood.processLibrary.StandardProcessTemplateInstance
+import org.softwood.taskTypes.TerminateTask
 
 import java.util.concurrent.CompletableFuture
 
@@ -25,24 +26,28 @@ import java.util.concurrent.CompletableFuture
 var ctx = SpringContextUtils::initialise(activeProfile='dev', ["org.softwood.processEngine", "org.softwood.processLibrary", "org.softwood.processBeanConfiguration"])
 
 ProcessRuntime rt = SpringContextUtils::getBean(ProcessRuntime)
-println "process runtime from ctx (status: ${rt.status})> "
+def status = rt.status
+// now failing !  println "process runtime from ctx (status: ${status})> "
 
 ProcessTemplateLibrary library = SpringContextUtils::getQualifiedBean (ProcessTemplateLibrary, "default")
 println "default library is ${library.name}"
 
 
-Task task = new ScriptTask()
-CompletableFuture future = task.execute()
+//Task task = new ScriptTask()
+//CompletableFuture future = task.execute()
  //wait for result
 
-println task.dump()
+//println task.dump()
 
+/*
 println task.executionDuration()
 future.thenApply {result ->
     println "result from async task execution was $result"
 }
+*/
 
 
+/*
 WorkflowExecutionContext wf = new WorkflowExecutionContextImpl('proc#1', 'default')
 
 wf.start([name:'william'])
@@ -56,9 +61,9 @@ println result
 
 var toVertices = g.getToVertices('decision')
 println "decision node has options to goto $toVertices"
+*/
 
 /*
-
 //using library for graph
 Graph<String, DefaultEdge> g2 = StandardProcessTemplateInstance.helloWorldProcess2()
 DepthFirstIterator gi = new DepthFirstIterator(g2)
@@ -84,12 +89,12 @@ Map cond = [check:{if (it=='Will') true else false}]
 graph.addEdgeWithCondition(decision, end, cond )
 
 TaskGraph graph2 = new TaskGraph()
-def start2 = graph2.addVertex("start", StartTask)
-def script2 = graph2.addVertex("script", ScriptTask)
-def par2 = graph2.addVertex("fork", ParallelGateway)
-def end2 = graph2.addVertex("end", EndTask)
-def leftfork2 = graph2.addVertex("leftFork", EndTask)
-def rightfork2 = graph2.addVertex("rightFork", EndTask)
+def start2 = graph2.addVertex("start2", StartTask)
+def script2 = graph2.addVertex("script2", ScriptTask)
+def par2 = graph2.addVertex("fork2", ParallelGateway)
+//def end2 = graph2.addVertex("end", EndTask)
+def leftfork2 = graph2.addVertex("leftFork2", EndTask)
+def rightfork2 = graph2.addVertex("rightFork2", TerminateTask)
 graph2.addEdge(start2, script2)
 graph2.addEdge(script2, par2)
 graph2.addEdge(par2, leftfork2)
@@ -106,21 +111,24 @@ ProcessTemplate t2 = SpringContextUtils.getPrototypeBean(ProcessTemplate, [name:
 //ProcessTemplate t1 = getProcessTemplate ()
 
 //create three prototypes - same graph in each but different names
+/*
 ProcessTemplate procDef = SpringContextUtils.getPrototypeBean(ProcessTemplate, [name:"myProcess", version:"1.0", processDefinition:graph])
 ProcessTemplate procDef2 =SpringContextUtils.getPrototypeBean(ProcessTemplate, [name:"myProcess", version:"2.0", processDefinition:graph])
 ProcessTemplate procDef3 =SpringContextUtils.getPrototypeBean(ProcessTemplate, [name:"mySecondProcess", version:"1.0", processDefinition:graph])
+*/
 ProcessTemplate procDef4 =SpringContextUtils.getPrototypeBean(ProcessTemplate, [name:"gatewayProcess", version:"1.0", processDefinition:graph2])
 
 
-library.add (procDef)
-library.add (procDef2)
-library.add (procDef3)
+
+//library.add (procDef)
+//library.add (procDef2)
+//library.add (procDef3)
 library.add (procDef4)
 
-List procs = library.search ("my")
-Optional<ProcessTemplate> latest = library.latest ("myProcess")
+//List procs = library.search ("my")
+//Optional<ProcessTemplate> latest = library.latest ("myProcess")
 Optional<ProcessTemplate> latestGw = library.latest ("gatewayProcess")
-ProcessTemplate template = latest.get()
+//ProcessTemplate template = latest.get()
 ProcessTemplate template2 = latestGw.get()
 
 //ProcessInstance pi = template.startProcess([var: 'will'])

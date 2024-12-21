@@ -19,9 +19,10 @@ class EndTask implements ExecutableTaskTrait {
 
     private CompletableFuture  end () {
        //initiate any tidy up actions
-       tidyUpProcess (taskVariables)
+        tidyUpProcess (taskVariables)
+        log.info "endTask: tidying up current task branch "
 
-       taskResult = CompletableFuture.completedFuture("end task completed")
+        taskResult = CompletableFuture.completedFuture("end task '$taskName' completed")
     }
 
     CompletableFuture execute() {

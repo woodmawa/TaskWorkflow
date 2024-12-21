@@ -13,6 +13,11 @@ class ExclusiveGateway implements ConditionalGatewayTrait {
     Map<String, Closure> conditionsMap = [:]
     def conditionsEvaluationResults
 
+    ExclusiveGateway () {
+        taskCategory = TaskCategories.Gateway
+        taskType = this.class.getSimpleName()
+    }
+
     private def run (value) {
         //tbc
         List out = []
