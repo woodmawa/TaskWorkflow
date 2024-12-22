@@ -1,11 +1,26 @@
 package org.softwood.taskTypes
 
-
+import groovy.transform.InheritConstructors
+import groovy.transform.ToString
 import groovy.util.logging.Slf4j
 
 import java.util.concurrent.CompletableFuture
 
+@InheritConstructors
+class TaskScript extends Script {
+
+    Closure script = {}
+
+    @Override
+    Object run() {
+        def result = script.call()
+        println "found binding var " + var
+        return result
+    }
+}
+
 @Slf4j
+@ToString (includeNames=true, includes = ["taskName", "taskType", "taskCategory", "status", "startTime", "endTime"])
 class ScriptTask implements ExecutableTaskTrait {
     String taskType = this.class.getSimpleName()
     TaskCategories taskCategory = TaskCategories.Task
@@ -13,27 +28,42 @@ class ScriptTask implements ExecutableTaskTrait {
 
     //@Autowired (false) WorkflowExecutionContext taskExecutionContext
 
-    Closure script = {println "hello William"}
+    TaskScript taskScript = new TaskScript ()
+
+
 
 
     void setScript (Closure script) {
-        this.script = script
+       taskScript.script = script
     }
 
     private def run(Map taskVariables=[:]) {
+        taskScript.script = {String out = "hello William "
+            var = [something:"was here"]
+            println "task script running -> " +out
+            return out
+        }
+
         taskResult = new CompletableFuture<>()
-        taskResult.supplyAsync {script(new Binding (taskVariables))}
+        Binding scriptBinding = new Binding ()
+        scriptBinding.setVariable("var",taskVariables ?: ["try":"out"] )
+        taskScript.setBinding (scriptBinding)
+        log.info "setting binding on script with var as : " + scriptBinding.variables
+
+        taskResult.completeAsync {
+            try {
+                taskScript.run()
+            }catch (Exception ex) {
+                ex.toString()
+            }
+        }
+
     }
 
 
     CompletableFuture execute() {
         log.info "running scriptTask Script  "
         taskResourceProcessor (ScriptTask::run)
-
-        /*setupTask()
-        taskResult = new CompletableFuture<>()
-        taskResult.supplyAsync {script()}
-        closeOutTask()*/
     }
 
     CompletableFuture execute(Map taskVariables) {

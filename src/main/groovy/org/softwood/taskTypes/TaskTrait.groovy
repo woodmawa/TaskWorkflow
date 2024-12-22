@@ -104,6 +104,7 @@ trait TaskTrait implements  Task {
     def taskResourceProcessor (Closure action, Map inputVariables = null) {
         try {
             setupTask(TaskStatus.RUNNING)
+            log.info "TaskTrait: task resource processor , task: $taskName, action.doCall ($this, $inputVariables)"
             action?.call (this, inputVariables)
             closeOutTask (TaskStatus.COMPLETED)
         } catch (Exception exception) {
@@ -112,7 +113,7 @@ trait TaskTrait implements  Task {
         }
     }
 
-    def gatewayResourceProcessor (Closure action, inputVariables = null) {
+    def gatewayResourceProcessor (Closure action, Map inputVariables = null) {
         try {
             setupTask(TaskStatus.RUNNING)
             action?.call (this, inputVariables)

@@ -17,8 +17,10 @@ class EndTask implements ExecutableTaskTrait {
     //any private tidy up actions for an end task can be run via this closure
     private Closure tidyUpProcess = {}
 
-    private CompletableFuture  end () {
+    private CompletableFuture  end (Map inputVariables =[:]) {
        //initiate any tidy up actions
+        if (inputVariables)
+            taskVariables = inputVariables
         tidyUpProcess (taskVariables)
         log.info "endTask: tidying up current task branch "
 
@@ -31,7 +33,7 @@ class EndTask implements ExecutableTaskTrait {
 
      CompletableFuture execute(Map inputVariables) {
         taskVariables ? inputVariables: [:]
-         taskResourceProcessor (EndTask::end)
+         taskResourceProcessor (EndTask::end, inputVariables)
      }
 
 

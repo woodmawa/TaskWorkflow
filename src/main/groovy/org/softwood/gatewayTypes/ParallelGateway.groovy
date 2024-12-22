@@ -18,19 +18,19 @@ class ParallelGateway implements GatewayTrait {
         taskType = this.class.getSimpleName()
     }
 
-    private def run (value) {
+    private def run (Map value=[:]) {
         //tbc
         List out = []
         int counter = 0
-        List previous = previousTaskResults
-        previous.each { Map.Entry<String, Closure> entry ->
-            out << [++counter, entry.getKey(), entry.getValue()]
+        List<List> previous = previousTaskResults
+        previous.each { List taskAndResult ->
+            out << [++counter, taskAndResult[0], (CompletableFuture) taskAndResult[1]]
         }
-
+        println "--> parallel gw : previousTaskResults " + out
         Optional.of (out)
     }
 
-    def fork (value=null ) {
+    def fork (Map value=[:]) {
         gatewayResourceProcessor (ParallelGateway::run, value)
 
     }
