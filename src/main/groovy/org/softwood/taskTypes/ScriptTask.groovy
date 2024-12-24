@@ -7,14 +7,15 @@ import groovy.util.logging.Slf4j
 import java.util.concurrent.CompletableFuture
 
 @InheritConstructors
+@Slf4j
 class TaskScript extends Script {
 
-    Closure script = {}
+    Closure work = {"done"}
 
     @Override
     Object run() {
-        def result = script.call()
-        println "found binding var " + var
+        log.debug "TaskScript: run the work closure and return result (default is 'done') "
+        def result = work.call()
         return result
     }
 }
@@ -25,54 +26,53 @@ class ScriptTask implements ExecutableTaskTrait {
     String taskType = this.class.getSimpleName()
     TaskCategories taskCategory = TaskCategories.Task
 
-
     //@Autowired (false) WorkflowExecutionContext taskExecutionContext
 
     TaskScript taskScript = new TaskScript ()
 
-
-
-
     void setScript (Closure script) {
-       taskScript.script = script
+       if (script)
+           taskScript.work = script
     }
 
-    private def run(Map taskVariables=[:]) {
-        taskScript.script = {String out = "hello William "
-            var = [something:"was here"]
-            println "task script running -> " +out
+    private def runTask(Map variables=[:]) {
+
+        //set the task script closure to do something different from default
+        taskScript.work = {String out = "hello William "
+            println "~~> change taskVariables from (orig) $taskVariables "
+            taskVariables = [something:"was here"]
+            println "~~> task script closure running -> " +out + "and taskVariables now $taskVariables"
             return out
         }
 
         taskResult = new CompletableFuture<>()
         Binding scriptBinding = new Binding ()
-        scriptBinding.setVariable("var",taskVariables ?: ["try":"out"] )
-        taskScript.setBinding (scriptBinding)
-        log.info "setting binding on script with var as : " + scriptBinding.variables
+        //set the current task and task variables into the script binding
+        scriptBinding.setVariable("taskVariables",taskVariables )
+        scriptBinding.setVariable("task",this )
 
+        taskScript.setBinding (scriptBinding)
+
+        //task result is future of computed outcome or the exception itself
         taskResult.completeAsync {
             try {
-                taskScript.run()
+                log.debug "Script's runTask:  running taskScript and get its Future result "
+                taskScript.run()        //call the script task ...
             }catch (Exception ex) {
-                ex.toString()
+                ex
             }
         }
 
     }
 
-
     CompletableFuture execute() {
         log.info "running scriptTask Script  "
-        taskResourceProcessor (ScriptTask::run)
+        taskResourceProcessor (ScriptTask::runTask)
     }
 
     CompletableFuture execute(Map taskVariables) {
         log.info "running script with task variables in "
         taskVariables ?: [:]
-        taskResourceProcessor (ScriptTask::run, taskVariables)
-
-
+        taskResourceProcessor (ScriptTask::runTask, taskVariables)
     }
-
-
 }

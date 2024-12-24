@@ -20,12 +20,14 @@ class StartTask implements ExecutableTaskTrait {
 
     @Override
     CompletableFuture execute() {
-        taskResourceProcessor (StartTask::start)
+        //taskResourceProcessor (StartTask::start)
+        start()
     }
 
     @Override
     CompletableFuture execute(Map inputVariables) {
-        taskResourceProcessor (StartTask::start, inputVariables)
+        //taskResourceProcessor (StartTask::start, inputVariables)
+        start (inputVariables)
     }
 
     @Override

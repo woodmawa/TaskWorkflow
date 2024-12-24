@@ -92,7 +92,7 @@ trait TaskTrait implements  Task {
     CompletableFuture closeOutTask (TaskStatus state) {
         endTime = LocalDateTime.now()
         status = state
-        taskResult
+        taskResult     //just return the taskResult future
     }
 
     /**
@@ -105,11 +105,11 @@ trait TaskTrait implements  Task {
         try {
             setupTask(TaskStatus.RUNNING)
             log.info "TaskTrait: task resource processor , task: $taskName, action.doCall ($this, $inputVariables)"
-            action?.call (this, inputVariables)
-            closeOutTask (TaskStatus.COMPLETED)
+            def result = action?.call (this, inputVariables)
+            return closeOutTask (TaskStatus.COMPLETED)
         } catch (Exception exception) {
             log.info "TaskTrait: task resource, action.doCall threw exception $exception with delegate set as $action.delegate"
-            closeOutTask(TaskStatus.EXCEPTION)
+            return closeOutTask(TaskStatus.EXCEPTION)
         }
     }
 
@@ -120,7 +120,7 @@ trait TaskTrait implements  Task {
             closeOutTask (TaskStatus.COMPLETED)
         } catch (Exception exception) {
             log.info "TaskTrait: gateway resource, action.doCall threw exception $exception with delegate set as $action.delegate"
-            closeOutTask(TaskStatus.EXCEPTION)
+            closeOutTask(TaskStatus.EXCEPTION, exception)
         }
     }
 }
