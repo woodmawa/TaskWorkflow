@@ -39,6 +39,7 @@ class ScriptTask implements ExecutableTaskTrait {
 
         //set the task script closure to do something different from default
         taskScript.work = {String out = "hello William "
+            println "~~> process variables for script task are  $processVariables "
             println "~~> change taskVariables from (orig) $taskVariables "
             taskVariables = [something:"was here"]
             println "~~> task script closure running -> " +out + "and taskVariables now $taskVariables"
@@ -48,6 +49,7 @@ class ScriptTask implements ExecutableTaskTrait {
         taskResult = new CompletableFuture<>()
         Binding scriptBinding = new Binding ()
         //set the current task and task variables into the script binding
+        scriptBinding.setVariable("processVariables", this.parentInstance.processVariables )
         scriptBinding.setVariable("taskVariables",taskVariables )
         scriptBinding.setVariable("task",this )
 

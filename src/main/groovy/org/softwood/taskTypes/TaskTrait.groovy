@@ -66,6 +66,16 @@ trait TaskTrait implements  Task {
         return taskVariables.asImmutable()
     }
 
+    @Override
+    void setProcessVariables(Map vars) {
+        this.parentInstance.processVariables = vars?:[:]
+    }
+
+    @Override
+    Map getProcessVariables() {
+        return this.parentInstance.processVariables.asImmutable()
+    }
+
     String executionDuration () {
         Duration duration = Duration.between(startTime, endTime)
         String formattedDuration =String.format("task execution time: %d ms", duration.toMillis())

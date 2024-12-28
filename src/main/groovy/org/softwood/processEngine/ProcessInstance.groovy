@@ -4,6 +4,7 @@ import groovy.transform.ToString
 import groovy.util.logging.Slf4j
 import org.softwood.gatewayTypes.ConditionalGatewayTrait
 import org.softwood.gatewayTypes.GatewayTrait
+import org.softwood.gatewayTypes.JoinGateway
 import org.softwood.gatewayTypes.ParallelGateway
 import org.softwood.graph.TaskGraph
 import org.softwood.graph.Vertex
@@ -19,6 +20,7 @@ import org.springframework.stereotype.Component
 
 import java.time.LocalDateTime
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.CountDownLatch
 
 @ToString
 @Slf4j
@@ -151,6 +153,14 @@ class ProcessInstance {
                     cgtask.setPreviousTaskResults(Optional.of(previousVertex), previousResult)
 
                     break
+                case "JoinGateway":
+                    JoinGateway join = task
+                    //get expected number of inputs
+                    List<Vertex> nextVertices = graph.getFromVertices(vertex)
+                    int latchExpectedInputs = nextVertices?.size()
+                    join.latch = new CountDownLatch(latchExpectedInputs)  //setup the expected numbers of join inputs
+                    break
+
                 default:
                     log.info("Next Gateway task [$task.taskName] is of category  [$task.taskCategory]")
                     break
