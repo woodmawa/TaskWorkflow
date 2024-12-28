@@ -188,6 +188,7 @@ class ProcessInstance {
         log.info "processing process graph vertex '${currentVertex.name}'"
         List<Vertex> nextVertices = graph.getToVertices(currentVertex.name)
         for (Vertex nextVertex : nextVertices) {
+
             processVertex(nextVertex, currentVertex, previousTaskResult)
         }
     }
