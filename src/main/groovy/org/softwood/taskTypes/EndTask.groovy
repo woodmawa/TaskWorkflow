@@ -13,6 +13,9 @@ class EndTask implements ExecutableTaskTrait {
     String taskType = this.class.getSimpleName()
     TaskCategories taskCategory = TaskCategories.Task
 
+    EndTask () {
+        taskWork = EndTask::end //link work to correct do work method
+    }
 
     //any private tidy up actions for an end task can be run via this closure
     private Closure tidyUpProcess = {}
@@ -26,16 +29,6 @@ class EndTask implements ExecutableTaskTrait {
 
         taskResult = CompletableFuture.completedFuture("end task '$taskName' completed")
     }
-
-    CompletableFuture execute() {
-        taskResourceProcessor (EndTask::end)
-    }
-
-     CompletableFuture execute(Map inputVariables) {
-        taskVariables ? inputVariables: [:]
-         taskResourceProcessor (EndTask::end, inputVariables)
-     }
-
 
     @Override
     String getTaskType() {

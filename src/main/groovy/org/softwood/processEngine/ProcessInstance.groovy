@@ -20,6 +20,7 @@ import org.springframework.stereotype.Component
 
 import java.time.LocalDateTime
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CountDownLatch
 
 @ToString
@@ -46,6 +47,7 @@ class ProcessInstance {
     TaskGraph graph
     LocalDateTime startTime, endTime
     Closure lastGasp = {}
+    Map runTaskReferenceLookup = new ConcurrentHashMap()
 
     ProcessInstance () {
         processVariables = [:]
@@ -55,6 +57,16 @@ class ProcessInstance {
 
     void setProcessTemplate (ProcessTemplate template) {
         fromTemplate = template
+    }
+
+    void addTaskToProcessRunTasks (Task task) {
+        runTaskReferenceLookup.putIfAbsent(task.taskName, task)   //once generated add task ref  for this process
+    }
+
+    //if task is already generated get it from
+    Optional<Task> taskLookup (String name) {
+        Task generatedTaskInstance  = runTaskReferenceLookup.get (name)
+        Optional.ofNullable(generatedTaskInstance)
     }
 
     /**

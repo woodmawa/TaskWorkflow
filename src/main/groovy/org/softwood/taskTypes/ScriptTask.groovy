@@ -28,6 +28,10 @@ class ScriptTask implements ExecutableTaskTrait {
 
     //@Autowired (false) WorkflowExecutionContext taskExecutionContext
 
+    ScriptTask () {
+        taskWork = this::runTask //link work to correct do work method
+    }
+
     TaskScript taskScript = new TaskScript ()
 
     void setScript (Closure script) {
@@ -67,14 +71,4 @@ class ScriptTask implements ExecutableTaskTrait {
 
     }
 
-    CompletableFuture execute() {
-        log.info "running scriptTask Script  "
-        taskResourceProcessor (ScriptTask::runTask)
-    }
-
-    CompletableFuture execute(Map taskVariables) {
-        log.info "running script with task variables in "
-        taskVariables ?: [:]
-        taskResourceProcessor (ScriptTask::runTask, taskVariables)
-    }
 }

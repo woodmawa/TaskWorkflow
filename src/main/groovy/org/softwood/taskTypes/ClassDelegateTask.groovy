@@ -19,26 +19,14 @@ class ClassDelegateTask implements TaskTrait {
     ClassDelegateTask (String name, BiFunction methodRef ) {
         taskName = name
         taskDelegateFunction = methodRef
+        taskWork = ClassDelegateTask::runTask //link work to correct do work method
 
 
     }
 
-    private def run(Map taskVariables=[:]) {
+    private def runTask(Map taskVariables=[:]) {
         taskResult = new CompletableFuture<>()
         taskResult.supplyAsync {taskDelegateFunction(new Binding (taskVariables))}
-    }
-
-    CompletableFuture execute() {
-        log.info "running class delegate "
-
-        taskResourceProcessor (ClassDelegateTask::run)
-
-     }
-
-     CompletableFuture execute(Map taskVariables) {
-         log.info "running script with task variables in "
-         taskResourceProcessor (ClassDelegateTask::run, taskVariables)
-
     }
 
 

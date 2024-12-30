@@ -16,6 +16,7 @@ class ParallelGateway implements GatewayTrait {
     ParallelGateway () {
         taskCategory = TaskCategories.Gateway
         taskType = this.class.getSimpleName()
+        taskWork = ParallelGateway::run
     }
 
     private def run (Map value=[:]) {
@@ -31,8 +32,9 @@ class ParallelGateway implements GatewayTrait {
     }
 
     def fork (Map value=[:]) {
-        gatewayResourceProcessor (ParallelGateway::run, value)
-
+        Closure work = ParallelGateway::run
+        //gatewayResourceProcessor (taskWork, value)
+        taskWork (this, value)
     }
 
     List forkedTasks () {

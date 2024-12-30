@@ -1,7 +1,6 @@
 package org.softwood.taskTypes
 
 import groovy.util.logging.Slf4j
-import org.softwood.gatewayTypes.Gateway
 import org.softwood.processEngine.ProcessInstance
 
 import java.time.Duration
@@ -10,6 +9,7 @@ import java.util.concurrent.CompletableFuture
 
 @Slf4j
 trait TaskTrait implements  Task {
+    UUID taskId
     String taskName
     abstract String taskType  //simple name for implementing task class
     abstract TaskCategories taskCategory //task or gateway
@@ -19,6 +19,7 @@ trait TaskTrait implements  Task {
     TaskStatus status = TaskStatus.PENDING
     ProcessInstance parentProcess
     CompletableFuture taskResult
+    Closure taskWork = {/* no op*/}
 
 
     //for first start task the previous task will be Optional.empty()
@@ -76,6 +77,12 @@ trait TaskTrait implements  Task {
         return this.parentInstance.processVariables.asImmutable()
     }
 
+    void addTaskToRunTasksLookup () {
+        def process = this.parentInstance
+        process.addTaskToProcessRunTasks (this)
+    }
+
+
     String executionDuration () {
         Duration duration = Duration.between(startTime, endTime)
         String formattedDuration =String.format("task execution time: %d ms", duration.toMillis())
@@ -105,13 +112,23 @@ trait TaskTrait implements  Task {
         taskResult     //just return the taskResult future
     }
 
+    @Override
+    public CompletableFuture execute() {
+        taskResourceProcessor (this.taskWork)
+    }
+
+    @Override
+    public CompletableFuture execute(Map inputVariables) {
+        taskResourceProcessor (this.taskWork, inputVariables)
+    }
+
     /**
      * surround method - that setsup the task state, runs the task and exits and tides up
      * @param action
      * @param inputVariables
      * @return
      */
-    def taskResourceProcessor (Closure action, Map inputVariables = null) {
+    private def taskResourceProcessor (Closure action, Map inputVariables = null) {
         try {
             setupTask(TaskStatus.RUNNING)
             log.info "TaskTrait: task resource processor , task: $taskName, action.doCall ($this, $inputVariables)"
@@ -123,9 +140,10 @@ trait TaskTrait implements  Task {
         }
     }
 
-    def gatewayResourceProcessor (Closure action, Map inputVariables = null) {
+    private def gatewayResourceProcessor (Closure action, Map inputVariables = null) {
         try {
             setupTask(TaskStatus.RUNNING)
+            log.info "TaskTrait: task resource processor , task: $taskName, action.doCall ($this, $inputVariables)"
             action?.call (this, inputVariables)
             closeOutTask (TaskStatus.COMPLETED)
         } catch (Exception exception) {

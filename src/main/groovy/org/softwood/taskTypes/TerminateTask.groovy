@@ -12,6 +12,10 @@ class TerminateTask implements ExecutableTaskTrait {
     String taskType = this.class.getSimpleName()
     TaskCategories taskCategory = TaskCategories.Task
 
+    TerminateTask () {
+        taskWork = TerminateTask::terminate
+    }
+
     private CompletableFuture  terminate (Map variables = [:]) {
         taskVariables = variables ?: taskVariables
         if (taskInitialisation)
@@ -19,16 +23,6 @@ class TerminateTask implements ExecutableTaskTrait {
         parentInstance.tidyUpProcessAndExit()
         log.info "TerminateTask: terminated process ${parentInstance.getProcessId()}, and exit "
         taskResult = CompletableFuture.completedFuture("terminate complete process task '$taskName' completed")
-    }
-
-    @Override
-    CompletableFuture execute() {
-        taskResourceProcessor (TerminateTask::terminate )
-    }
-
-    @Override
-    CompletableFuture execute(Map inputVariables) {
-        taskResourceProcessor (TerminateTask::terminate, inputVariables)
     }
 
     @Override

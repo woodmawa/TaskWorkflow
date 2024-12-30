@@ -11,23 +11,15 @@ class StartTask implements ExecutableTaskTrait {
     String taskType = this.class.getSimpleName()
     TaskCategories taskCategory = TaskCategories.Task
 
+    StartTask () {
+        taskWork = StartTask::start //link work to correct do work method
+    }
+
     private CompletableFuture  start (Map variables = [:]) {
         taskVariables = variables ?: taskVariables
         if (taskInitialisation)
             taskInitialisation (taskVariables)
         taskResult = CompletableFuture.completedFuture("start task '$taskName' completed")
-    }
-
-    @Override
-    CompletableFuture execute() {
-        //taskResourceProcessor (StartTask::start)
-        start()
-    }
-
-    @Override
-    CompletableFuture execute(Map inputVariables) {
-        //taskResourceProcessor (StartTask::start, inputVariables)
-        start (inputVariables)
     }
 
     @Override
