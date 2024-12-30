@@ -22,4 +22,8 @@ class TaskWorker implements Runnable  {
             }
         }
     }
+
+    void stop() {
+        running = false
+    }
 }
