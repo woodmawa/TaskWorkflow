@@ -14,7 +14,6 @@ interface Task<T, R> {
     TaskStatus getStatus ()
     LocalDateTime getStartTime()
     LocalDateTime getEndTime()
-    CompletableFuture<R> execute()  //runs the generic task work method
 
     void setPreviousTaskResults (Optional<Task> currentTask, CompletableFuture previousTaskResult)
 }

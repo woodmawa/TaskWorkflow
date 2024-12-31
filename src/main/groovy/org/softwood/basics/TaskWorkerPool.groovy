@@ -1,17 +1,21 @@
 package org.softwood.basics
 
+import groovy.util.logging.Slf4j
+
+@Slf4j
 class TaskWorkerPool {
     private TaskQueue queue
     private List<Thread> workers = []
     private final Object poolLock = new Object()
 
-    TaskPool(TaskQueue taskQueue, int initialSize) {
+    TaskWorkerPool(TaskQueue taskQueue, int initialSize) {
         queue = taskQueue
         resizePool(initialSize)
     }
 
     synchronized void resizePool(int newSize) {
         synchronized(poolLock) {
+            log.info "resizing task worker pool to $newSize"
             if (newSize > workers.size()) {
                 addWorkers(newSize - workers.size())
             } else if (newSize < workers.size()) {

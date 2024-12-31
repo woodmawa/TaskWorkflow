@@ -111,7 +111,7 @@ trait TaskTrait implements  Task {
         status = state
         taskResult     //just return the taskResult future
     }
-
+/*
     @Override
     public CompletableFuture execute() {
         taskResourceProcessor (this.taskWork)
@@ -121,14 +121,15 @@ trait TaskTrait implements  Task {
     public CompletableFuture execute(Map inputVariables) {
         taskResourceProcessor (this.taskWork, inputVariables)
     }
-
+*/
     /**
      * surround method - that setsup the task state, runs the task and exits and tides up
      * @param action
      * @param inputVariables
      * @return
      */
-    private def taskResourceProcessor (Closure action, Map inputVariables = null) {
+    /*
+    def taskResourceProcessor (Closure action, Map inputVariables = null) {
         try {
             setupTask(TaskStatus.RUNNING)
             log.info "TaskTrait: task resource processor , task: $taskName, action.doCall ($this, $inputVariables)"
@@ -140,7 +141,7 @@ trait TaskTrait implements  Task {
         }
     }
 
-    private def gatewayResourceProcessor (Closure action, Map inputVariables = null) {
+    def gatewayResourceProcessor (Closure action, Map inputVariables = null) {
         try {
             setupTask(TaskStatus.RUNNING)
             log.info "TaskTrait: task resource processor , task: $taskName, action.doCall ($this, $inputVariables)"
@@ -151,4 +152,6 @@ trait TaskTrait implements  Task {
             closeOutTask(TaskStatus.EXCEPTION, exception)
         }
     }
+    */
+
 }

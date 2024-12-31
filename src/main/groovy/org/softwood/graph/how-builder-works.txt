@@ -1,0 +1,195 @@
+I'll break down each part of the TaskGraphBuilder implementation in detail:
+
+First, let's look at the instance variables:
+
+groovy:
+TaskGraph graph = new TaskGraph()           // Holds the actual graph being built
+private Map<String, Vertex> vertexCache = [:]       // Caches vertices by name for quick lookup
+private Vertex currentVertex                        // Tracks which vertex we're currently configuring
+
+The static build method creates the DSL entry point:
+
+static TaskGraph build(Closure closure) {
+    def builder = new TaskGraphBuilder()
+    closure.delegate = builder                      // Makes the builder methods available inside the closure
+    closure.resolveStrategy = Closure.DELEGATE_FIRST // Prioritizes builder methods over other methods
+    closure()                                       // Executes the DSL closure
+    return builder.graph                            // Returns the constructed graph
+}
+
+The vertex method is the core building block:
+
+def vertex(String name, Class type, Closure closure = null) {
+    // Create and register the vertex
+    def vertex = new Vertex(name, type)
+    vertexCache[name] = vertex                      // Store for later lookup by name
+    graph.addVertex(vertex)                         // Add to the actual graph
+
+    // Handle nested configuration
+    if (closure) {
+        def prevVertex = currentVertex              // Save previous vertex (for nested definitions)
+        currentVertex = vertex                      // Set this as current vertex for inner config
+        closure.delegate = this                     // Make builder methods available in inner closure
+        closure.resolveStrategy = Closure.DELEGATE_FIRST
+        closure()                                   // Execute the vertex configuration
+        currentVertex = prevVertex                  // Restore previous vertex
+    }
+
+    return vertex
+}
+
+The conditions methods add validation rules to vertices:
+
+def conditions(Map<String, Closure> conditions) {
+    if (!currentVertex) {                          // Safety check - must be inside vertex block
+        throw new IllegalStateException("conditions must be called within a vertex block")
+    }
+    currentVertex.conditionsMap.putAll(conditions)  // Add all conditions at once
+}
+
+def condition(String name, Closure condition) {
+    if (!currentVertex) {
+        throw new IllegalStateException("condition must be called within a vertex block")
+    }
+    currentVertex.conditionsMap[name] = condition   // Add single condition
+}
+
+The connectsTo methods establish relationships between vertices:
+
+def connectsTo(String targetName, Map conditions = null) {
+    if (!currentVertex) {                          // Safety check - must be inside vertex block
+        throw new IllegalStateException("connectsTo must be called within a vertex block")
+    }
+
+    def targetVertex = vertexCache[targetName]      // Look up target vertex by name
+    if (!targetVertex) {                           // Verify target exists
+        throw new IllegalArgumentException("Target vertex '${targetName}' not found")
+    }
+
+    // Add edge with or without conditions
+    if (conditions) {
+        graph.addEdgeWithCondition(currentVertex, targetVertex, conditions)
+    } else {
+        graph.addEdge(currentVertex, targetVertex)
+    }
+}
+
+// Convenience method for connecting to multiple targets
+def connectsTo(List<String> targetNames, Map conditions = null) {
+    targetNames.each { targetName ->
+        connectsTo(targetName, conditions)
+    }
+}
+
+Here's how it all works together in practice:
+def graph = buildTaskGraph {                       // Starts build process
+    vertex("start", StartTask) {                   // Creates vertex named "start"
+        condition("init", { true })                // Adds a condition to "start"
+        connectsTo("process")                      // Connects "start" to "process"
+    }
+
+    vertex("process", ProcessTask) {               // Creates and configures "process" vertex
+        conditions([                               // Adds multiple conditions
+            "dataAvailable": { it.hasData() },
+            "validFormat": { it.isValid() }
+        ])
+        connectsTo(["success", "error"])           // Connects to multiple targets
+    }
+}
+The key features that make this DSL work well are:
+
+The vertex cache allows referring to vertices by name
+The currentVertex tracking enables nested configuration
+The closure delegate system makes the DSL methods available in the right scope
+The builder maintains the graph structure internally
+Error checking ensures valid graph construction
+
+This implementation allows for a natural, hierarchical way to define graph structures while maintaining proper relationships and conditions between vertices. CopyRetryClaude does not have the ability to run the code it generates yet.WWand provide function to the builder to generate a json formatted representation of the graph that can be stored and retrieved from a fileEditI'll add methods to serialize and deserialize the graph to/from JSON format.
+TaskGraph DSL Builder with JSON SerializationClick to open code
+Here's how you can use the JSON serialization features:
+
+// Create a graph
+def graph = buildTaskGraph {
+    vertex("start", StartTask) {
+        condition("init", { true })
+        connectsTo("process")
+    }
+
+    vertex("process", ProcessTask) {
+        conditions([
+            "dataAvailable": { it.hasData() },
+            "validFormat": { it.isValid() }
+        ])
+        connectsTo(["success", "error"])
+    }
+
+    vertex("success", SuccessTask)
+    vertex("error", ErrorTask)
+}
+
+// Save to JSON file
+graph.saveToFile("taskgraph.json")
+
+// Later, load the graph from JSON
+def loadedGraph = TaskGraphBuilder.loadFromFile("taskgraph.json")
+The JSON output will look something like this:
+jsonCopy{
+    "vertices": [
+        {
+            "name": "start",
+            "type": "com.example.StartTask",
+            "conditions": {
+                "init": "{ true }"
+            },
+            "connections": ["process"]
+        },
+        {
+            "name": "process",
+            "type": "com.example.ProcessTask",
+            "conditions": {
+                "dataAvailable": "{ it.hasData() }",
+                "validFormat": "{ it.isValid() }"
+            },
+            "connections": ["success", "error"]
+        },
+        {
+            "name": "success",
+            "type": "com.example.SuccessTask",
+            "conditions": {},
+            "connections": []
+        },
+        {
+            "name": "error",
+            "type": "com.example.ErrorTask",
+            "conditions": {},
+            "connections": []
+        }
+    ]
+}
+
+Important notes about this implementation:
+
+The JSON serialization captures:
+
+Vertex names and types
+Conditions (as string representations)
+Connections between vertices
+
+
+Limitations/Considerations:
+
+Closure serialization is simplified - in a production environment, you'd want more robust closure serialization/deserialization
+The type information is stored as class names, so the classes must be available in the classpath when deserializing
+Complex condition logic might need special handling
+
+
+Features:
+
+Pretty-printed JSON for readability
+File-based persistence
+Two-pass deserialization to ensure all vertices exist before creating connections
+Support for both single-file operations and string-based JSON operations
+
+
+
+Would you like me to add any additional serialization features or modify the existing implementation?

@@ -10,7 +10,7 @@ import java.util.concurrent.CompletableFuture
 @Slf4j
 class TaskScript extends Script {
 
-    Closure work = {"done"}
+    Closure work = {"no-op"}
 
     @Override
     Object run() {
@@ -29,7 +29,7 @@ class ScriptTask implements ExecutableTaskTrait {
     //@Autowired (false) WorkflowExecutionContext taskExecutionContext
 
     ScriptTask () {
-        taskWork = this::runTask //link work to correct do work method
+        taskWork = ScriptTask::runTask //link work to correct do work method
     }
 
     TaskScript taskScript = new TaskScript ()
