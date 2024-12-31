@@ -14,6 +14,7 @@ interface Task<T, R> {
     TaskStatus getStatus ()
     LocalDateTime getStartTime()
     LocalDateTime getEndTime()
+    CompletableFuture getTaskResult()
 
     void setPreviousTaskResults (Optional<Task> currentTask, CompletableFuture previousTaskResult)
 }

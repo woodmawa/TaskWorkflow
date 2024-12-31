@@ -2,6 +2,7 @@ package org.softwood.gatewayTypes
 
 import groovy.transform.ToString
 import groovy.util.logging.Slf4j
+import org.softwood.taskTypes.Task
 import org.softwood.taskTypes.TaskCategories
 
 import java.util.concurrent.CompletableFuture
@@ -25,16 +26,14 @@ class ParallelGateway implements GatewayTrait {
         int counter = 0
         List<List> previous = previousTaskResults
         previous.each { List taskAndResult ->
-            out << [++counter, taskAndResult[0], (CompletableFuture) taskAndResult[1]]
+            out << [++counter, (Task) taskAndResult[0], (CompletableFuture) taskAndResult[1]]
         }
         println "--> parallel gw : previousTaskResults " + out
         Optional.of (out)
     }
 
-    def fork (Map value=[:]) {
-        Closure work = ParallelGateway::run
-        //gatewayResourceProcessor (taskWork, value)
-        taskWork (this, value)
+    public def fork (Map value=[:]) {
+        gatewayResourceProcessor (taskWork, value)
     }
 
     List forkedTasks () {

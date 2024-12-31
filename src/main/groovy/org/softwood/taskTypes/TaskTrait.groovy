@@ -1,14 +1,16 @@
 package org.softwood.taskTypes
 
 import groovy.util.logging.Slf4j
+import org.softwood.graph.Vertex
 import org.softwood.processEngine.ProcessInstance
 
 import java.time.Duration
 import java.time.LocalDateTime
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.ConcurrentSkipListSet
 
 @Slf4j
-trait TaskTrait implements  Task {
+trait TaskTrait  implements  Task  {
     UUID taskId
     String taskName
     abstract String taskType  //simple name for implementing task class
@@ -16,11 +18,30 @@ trait TaskTrait implements  Task {
     Map<String, ? extends Object> taskVariables = [:]
     Closure taskInitialisation = {var ->}
     LocalDateTime startTime, endTime
-    TaskStatus status = TaskStatus.PENDING
+    TaskStatus status = TaskStatus.NOT_STARTED
     ProcessInstance parentProcess
     CompletableFuture taskResult
     Closure taskWork = {/* no op*/}
 
+    //required to track the join task ready to run calculation
+    Set<Task> requiredPredecessors = new ConcurrentSkipListSet()
+
+    /**
+     * determines if all the predecessor tasks for a join have completed
+     * @return
+     */
+    boolean isReadyToExecute() {
+        // Special logic for join nodes, check all predessors have completed
+        if (taskType == "JoinTask") {
+            return requiredPredecessors.every { predecessorName ->
+                def predecessor = parentInstance.taskCache
+                //graph.lookupVertexByTaskName(predecessorName)
+                predecessor?.status == TaskStatus.COMPLETED
+            }
+        }
+        // Regular nodes just need to be NOT_STARTED
+        return status == TaskStatus.NOT_STARTED
+    }
 
     //for first start task the previous task will be Optional.empty()
     List<List> previousTaskResults = []
@@ -67,12 +88,10 @@ trait TaskTrait implements  Task {
         return taskVariables.asImmutable()
     }
 
-    @Override
     void setProcessVariables(Map vars) {
         this.parentInstance.processVariables = vars?:[:]
     }
 
-    @Override
     Map getProcessVariables() {
         return this.parentInstance.processVariables.asImmutable()
     }
@@ -111,47 +130,5 @@ trait TaskTrait implements  Task {
         status = state
         taskResult     //just return the taskResult future
     }
-/*
-    @Override
-    public CompletableFuture execute() {
-        taskResourceProcessor (this.taskWork)
-    }
-
-    @Override
-    public CompletableFuture execute(Map inputVariables) {
-        taskResourceProcessor (this.taskWork, inputVariables)
-    }
-*/
-    /**
-     * surround method - that setsup the task state, runs the task and exits and tides up
-     * @param action
-     * @param inputVariables
-     * @return
-     */
-    /*
-    def taskResourceProcessor (Closure action, Map inputVariables = null) {
-        try {
-            setupTask(TaskStatus.RUNNING)
-            log.info "TaskTrait: task resource processor , task: $taskName, action.doCall ($this, $inputVariables)"
-            def result = action?.call (this, inputVariables)
-            return closeOutTask (TaskStatus.COMPLETED)
-        } catch (Exception exception) {
-            log.info "TaskTrait: task resource, action.doCall threw exception $exception with delegate set as $action.delegate"
-            return closeOutTask(TaskStatus.EXCEPTION)
-        }
-    }
-
-    def gatewayResourceProcessor (Closure action, Map inputVariables = null) {
-        try {
-            setupTask(TaskStatus.RUNNING)
-            log.info "TaskTrait: task resource processor , task: $taskName, action.doCall ($this, $inputVariables)"
-            action?.call (this, inputVariables)
-            closeOutTask (TaskStatus.COMPLETED)
-        } catch (Exception exception) {
-            log.info "TaskTrait: gateway resource, action.doCall threw exception $exception with delegate set as $action.delegate"
-            closeOutTask(TaskStatus.EXCEPTION, exception)
-        }
-    }
-    */
 
 }

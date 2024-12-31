@@ -12,6 +12,8 @@ class Vertex {
     Class type
     Map<String, Closure> conditionsMap = [:]
 
+    Vertex () {}
+
     Vertex(String name, Class type) {
         this.name = name
         this.type = type

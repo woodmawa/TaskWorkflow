@@ -2,6 +2,7 @@ package org.softwood.graph
 
 import groovy.json.JsonBuilder
 import groovy.json.JsonSlurper
+import org.softwood.gatewayTypes.JoinGateway
 
 /**
  * The builder provides:
@@ -51,6 +52,21 @@ class TaskGraphBuilder {
         }
 
         return vertex
+    }
+
+    def fork(String name, Closure closure) {
+        vertex(name, ForkTask, closure)
+    }
+
+    def join(String name, List<String> requiredPredecessors, Closure closure = null) {
+        vertex(name, JoinGateway) {
+            currentVertex.requiredPredecessors.addAll(requiredPredecessors)
+            if (closure) {
+                closure.delegate = this
+                closure.resolveStrategy = Closure.DELEGATE_FIRST
+                closure()
+            }
+        }
     }
 
     def conditions(Map<String, Closure> conditions) {

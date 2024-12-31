@@ -12,12 +12,12 @@ import javax.naming.Name
 @Component ("taskTypeLookup")
 @Slf4j
 class TaskTypeLookup {
-    Map taskTypeLookup = [:]
+    static Map taskTypeLookup = [:]
 
     /**
      * links vertex type with Class to construct
      */
-    TaskTypeLookup () {
+    static {
         taskTypeLookup.putIfAbsent( StartTask.class.simpleName,  StartTask )
         taskTypeLookup.putIfAbsent( EndTask.class.simpleName, EndTask )
         taskTypeLookup.putIfAbsent( TerminateTask.class.simpleName, TerminateTask )
@@ -32,13 +32,13 @@ class TaskTypeLookup {
     }
 
 
-    Optional<Task> lookup (Vertex vertex) {
+    static Optional<Task> lookup (Vertex vertex) {
 
         def taskType = taskTypeLookup[vertex.type.simpleName]
         Optional.ofNullable (taskType)
     }
 
-    Optional<Task> getTaskFor (Vertex vertex, Map initValues=[:]) {
+    static Optional<Task> getTaskFor (Vertex vertex, Map initValues=[:]) {
         Optional optionalTask
 
         if (vertex == null)
