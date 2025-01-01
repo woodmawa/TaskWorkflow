@@ -11,19 +11,20 @@ class JoinGateway implements GatewayTrait {
     TaskCategories taskCategory = TaskCategories.Gateway
     CountDownLatch latch
 
-    private def run (value) {
+    JoinGateway () {
+        taskWork = JoinGateway::doJoin  //link work to correct do work method
+    }
+
+    private def doJoin () {
         //tbc
         List out = []
         int counter = 0
         List previous = previousTaskResults
         previous.each { Map.Entry<String, Closure> entry ->
-            out << [++counter, entry.getKey(), entry.getValue()?.call(value)]
+            out << [++counter, entry.getKey(), entry.getValue()?.call()]
         }
         out
     }
 
-    def evaluateConditions (value ) {
-        gatewayResourceProcessor (JoinGateway::run, value)
 
-    }
 }

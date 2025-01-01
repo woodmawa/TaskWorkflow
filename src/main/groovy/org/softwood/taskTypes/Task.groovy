@@ -6,6 +6,7 @@ import java.util.concurrent.CompletableFuture
 interface Task<T, R> {
     void setTaskVariables (Map vars)
     Map<String, ? extends Object> getTaskVariables()
+    Map<String, ? extends Object> getProcessVariables()
     void setTaskName(String name)
     UUID getTaskId ()
     String getTaskName ()

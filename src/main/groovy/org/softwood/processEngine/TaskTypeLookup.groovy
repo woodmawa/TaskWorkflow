@@ -54,7 +54,8 @@ class TaskTypeLookup {
             }
             object["taskName"] = vertex.name
             object["taskId"] = UUID.randomUUID() //assign unique task ref
-            //object["taskType"] = vertex.type
+            def vClassType = vertex.type
+            object["taskType"] = vClassType.simpleName
             optionalTask = Optional.ofNullable(object)
         }
         else

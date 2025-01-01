@@ -39,6 +39,7 @@ class ScriptTask implements ExecutableTaskTrait {
            taskScript.work = script
     }
 
+    //returns completeable future
     private def runTask(Map variables=[:]) {
 
         //set the task script closure to do something different from default

@@ -25,11 +25,15 @@ trait ExecutableTaskTrait<R> extends TaskTrait {
     }
 
     public CompletableFuture execute() {
-        taskResourceProcessor (this.taskWork)
+        def futureResult = taskResourceProcessor (this.taskWork)
+        addToProcessRunTasks()
+        futureResult
     }
 
     public CompletableFuture execute(Map inputVariables) {
-        taskResourceProcessor (this.taskWork, inputVariables)
+        def futureResult= taskResourceProcessor (this.taskWork, inputVariables)
+        addToProcessRunTasks()
+        futureResult
     }
 
 }

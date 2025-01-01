@@ -22,6 +22,10 @@ trait TaskTrait  implements  Task  {
     ProcessInstance parentProcess
     CompletableFuture taskResult
     Closure taskWork = {/* no op*/}
+    //for first start task the previous task will be Optional.empty()
+    List<List> previousTaskResults = []
+
+
 
     //required to track the join task ready to run calculation
     Set<Task> requiredPredecessors = new ConcurrentSkipListSet()
@@ -33,71 +37,66 @@ trait TaskTrait  implements  Task  {
     boolean isReadyToExecute() {
         // Special logic for join nodes, check all predessors have completed
         if (taskType == "JoinTask") {
-            return requiredPredecessors.every { predecessorName ->
-                def predecessor = parentInstance.taskCache
+            return requiredPredecessors.every { Task predecessor ->
+                //def predecessor = parentInstance.taskCache
                 //graph.lookupVertexByTaskName(predecessorName)
-                predecessor?.status == TaskStatus.COMPLETED
+                def isReady = (predecessor?.status != TaskStatus.NOT_STARTED ||
+                        predecessor?.status != TaskStatus.NOT_REQUIRED)
             }
         }
         // Regular nodes just need to be NOT_STARTED
         return status == TaskStatus.NOT_STARTED
     }
 
-    //for first start task the previous task will be Optional.empty()
-    List<List> previousTaskResults = []
-
 
     ProcessInstance getParentInstance () {
         parentProcess
     }
 
-    @Override
     void setPreviousTaskResults (Optional<Task> previousTask, CompletableFuture result) {
         previousTaskResults << [previousTask,result]
     }
 
-    //@Override
+    List<List> getPreviousTaskResults () {
+        previousTaskResults.asImmutable()
+    }
+
     void setTaskName (String name) {
         this.taskName = name
     }
 
-    //@Override
     String getTaskName () {
         taskName
     }
 
-    //@Override
     //get from implementing class
     String getTaskType () {
         taskType
     }
 
-    //@Override
     //get from implementing class
     TaskCategories getTaskCategory () {
         taskCategory
     }
 
-    @Override
     void setTaskVariables(Map vars) {
         taskVariables = vars?:[:]
     }
 
-    @Override
     Map getTaskVariables() {
         return taskVariables.asImmutable()
     }
 
     void setProcessVariables(Map vars) {
-        this.parentInstance.processVariables = vars?:[:]
+        this.parentProcess.processVariables.putAll(vars?:[:])
     }
 
     Map getProcessVariables() {
-        return this.parentInstance.processVariables.asImmutable()
+        return this.parentProcess.processVariables
     }
 
-    void addTaskToRunTasksLookup () {
-        def process = this.parentInstance
+    void addToProcessRunTasks () {
+        def process = this.parentProcess
         process.addTaskToProcessRunTasks (this)
     }
 

@@ -8,6 +8,7 @@ enum TaskStatus {
     COMPLETED,
     FAILED,
     CANCELLED,
-    SUSPENDED
+    SUSPENDED,
+    NOT_REQUIRED
 
 }
