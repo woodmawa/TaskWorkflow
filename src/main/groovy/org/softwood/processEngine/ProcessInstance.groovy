@@ -69,11 +69,6 @@ class ProcessInstance {
         vertexTaskCache.putIfAbsent(task.taskName, task)   //add task to cache
     }
 
-    //if task is already generated get it from
-    Optional<Task> taskLookup (String name) {
-        Task generatedTaskInstance  = runTaskReferenceLookup.get (name)
-        Optional.ofNullable(generatedTaskInstance)
-    }
 
     /**
      * at end of processing - close out and save to history
@@ -101,15 +96,15 @@ class ProcessInstance {
         this.processVariables = processVariables
         startTime = LocalDateTime.now()
         status = ProcessState.Running
+        ProcessInstance pi = this
 
         // Start the 'start' vertex as root
         graph = fromTemplate.processDefinition
         Vertex head = graph.getHead()
-        Map initialValues = null
-        Optional<Task> startTask = TaskTypeLookup.getTaskFor(head, initialValues)
-        CompletableFuture freshStart = CompletableFuture.completedFuture("process [${processId}] started".toString())
-        //processVertex(head, null, freshStart)
-        processTask (startTask.get())
+        Map initialValues = [:]
+        Task startTask = getTaskForVertex(head)
+
+        processTask (startTask)
 
         this
 
@@ -120,7 +115,7 @@ class ProcessInstance {
      * factory  TaskTypeLookup to generate the nex task, and sets refereence in the cache
      * @param vertex
      */
-    private Task getTaskForVertex (Vertex vertex) {
+    private Task getTaskForVertex (Vertex vertex, Map initialValues=[:]) {
         TaskTrait task
         if (vertexTaskCache.contains (vertex)) {
             task = vertexTaskCache.get(vertex)
@@ -132,6 +127,7 @@ class ProcessInstance {
             }
 
             task = optionalTask.get()
+            task.setInitialValues ( initialValues?: [:])
             task.parentProcess = this
             task.parentProcess.vertexTaskCache.putIfAbsent(vertex, task) //add task to cache for this process
         }
@@ -146,12 +142,27 @@ class ProcessInstance {
     private List<Task> getTaskSuccessors (Task currentTask) {
 
         List<Vertex> nextVertices = graph.getToVertices(currentTask.taskName)
-        List<Optional<Task>> nextTasks = nextVertices.collect {getTaskForVertex(it)}
+        List<TaskTrait> successors = nextVertices.collect {getTaskForVertex(it)}
         if (currentTask.status == TaskStatus.NOT_REQUIRED) {
             //set not required on all its successors - assumes no crossed beams in the graph!
-            nextTasks.each {it.get().status == TaskStatus.NOT_REQUIRED}
+            successors.each {it.status == TaskStatus.NOT_REQUIRED}
+        } else {
+            //take the current tasks future result and add that to each successor
+            successors.each { task ->
+                task.setPreviousTaskResults(Optional.of(currentTask), currentTask.taskResult)
+                // Update predecessor tracking for join nodes
+                if (task.taskType instanceof JoinGateway && task.status != TaskStatus.NOT_REQUIRED) {
+                    //add to required tasks for the join
+                    JoinGatewayTrait gwtask = task
+                    gwtask.requiredPredecessors << currentTask
+                } else if (task.taskType instanceof ParallelGateway){
+                    ParallelGateway pgtask = task
+                    //pgtask.
+
+
+                }
+            }
         }
-        nextTasks.collect{it.get()}
     }
 
     /**
@@ -159,20 +170,12 @@ class ProcessInstance {
      * @param task
      */
     private void processTask (TaskTrait task) {
-        //add this process instance as parent for the task to be processed
-        task.parentProcess = this
-        if (!task.isReadyToExecute()) {
+       if (!task.isReadyToExecute()) {
             //if not ready to run yet just wait till called again
             return
         }
 
-        if (task.taskType == "StartTask") {
-            //no pre existing future state so create one here
-            CompletableFuture freshStart = CompletableFuture.completedFuture("""process [${processId}] started""".toString())
-            task.setPreviousTaskResults (Optional.empty(), freshStart)
-        }
-
-        //do the executable bit of processing
+       //do the executable bit of processing
         def result
         if (task.taskCategory == TaskCategories.Task ){
             ExecutableTaskTrait etask = task
@@ -197,12 +200,6 @@ class ProcessInstance {
         //process the successor tasks
         List<Task> successors = getTaskSuccessors (task)
         successors.each { successor ->
-            successor.setPreviousTaskResults(Optional.of(task), task.taskResult)
-            // Update predecessor tracking for join nodes
-            if (successor.taskType instanceof  JoinGateway && task.status != TaskStatus.NOT_REQUIRED) {
-                //add to required tasks for the join
-                task.requiredPredecessors << task
-            }
             //do this in parallel ?  successors.collectParall {-> processTask (it)} ??
             processTask(successor)
         }

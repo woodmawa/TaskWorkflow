@@ -2,6 +2,7 @@ package org.softwood.taskTypes
 
 import groovy.transform.ToString
 import groovy.util.logging.Slf4j
+import org.softwood.processEngine.ProcessInstance
 
 import java.time.LocalDateTime
 import java.util.concurrent.CompletableFuture
@@ -16,6 +17,11 @@ class StartTask implements ExecutableTaskTrait {
     }
 
     private CompletableFuture  start (Map variables = [:]) {
+        //no pre existing future state so create one here
+        ProcessInstance pi = this.parentProcess
+        CompletableFuture freshStart = CompletableFuture.completedFuture("""process [${pi.processId}] started""".toString())
+        setPreviousTaskResults (Optional.empty(), freshStart)
+
         taskVariables = variables ?: taskVariables
         if (taskInitialisation)
             taskInitialisation (taskVariables)

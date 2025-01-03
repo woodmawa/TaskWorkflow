@@ -16,6 +16,7 @@ interface Task<T, R> {
     LocalDateTime getStartTime()
     LocalDateTime getEndTime()
     CompletableFuture getTaskResult()
+    void setInitialValues (Map initialValues )
 
     void setPreviousTaskResults (Optional<Task> currentTask, CompletableFuture previousTaskResult)
 }

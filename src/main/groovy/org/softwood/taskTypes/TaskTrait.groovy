@@ -7,6 +7,7 @@ import org.softwood.processEngine.ProcessInstance
 import java.time.Duration
 import java.time.LocalDateTime
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.ConcurrentSkipListSet
 
@@ -24,10 +25,8 @@ trait TaskTrait  implements  Task  {
     CompletableFuture taskResult
     Closure taskWork = {/* no op*/}
     //for first start task the previous task will be Optional.empty()
-    List<List> previousTaskResults = new ConcurrentLinkedQueue<>()
-
-
-
+    List<List> previousTaskResults = []
+    Map initialValues = new ConcurrentHashMap()
     //required to track the join task ready to run calculation
     Set<Task> requiredPredecessors = new ConcurrentSkipListSet()
 
@@ -49,6 +48,9 @@ trait TaskTrait  implements  Task  {
         return status == TaskStatus.NOT_STARTED
     }
 
+    void setInitialValues (Map initialTaskValues=[:]) {
+        initialValues.putAll(initialTaskValues)
+    }
 
     ProcessInstance getParentInstance () {
         parentProcess
