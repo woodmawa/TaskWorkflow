@@ -138,6 +138,11 @@ class ProcessInstance {
         task
     }
 
+    /**
+     * helper function - get tasks successors by interpreting the graph template
+     * @param currentTask
+     * @return
+     */
     private List<Task> getTaskSuccessors (Task currentTask) {
 
         List<Vertex> nextVertices = graph.getToVertices(currentTask.taskName)
@@ -149,42 +154,59 @@ class ProcessInstance {
         nextTasks.collect{it.get()}
     }
 
-    //reworked process sample
-    private void processVertex(Vertex vertex, Vertex previousVertex, CompletableFuture previousResult) {
-        TaskTrait task
-
-        task = getTaskForVertex (vertex)
-
+    /**
+     * process current Task from graph tree in the process
+     * @param task
+     */
+    private void processTask (TaskTrait task) {
+        task.parentProcess = this
         if (!task.isReadyToExecute()) {
+            //if not ready to run yet just wait till called again
             return
         }
 
-        //set this process as parent for the task
-        task.setPreviousTaskResults(Optional.of(task), previousResult)
-
-        this.executeTask(task)
-
-        if (status != ProcessState.Completed){
-            List<Vertex> nextVertices = graph.getToVertices(currentVertex.name)
-            List<Task> nextTasks = nextVertices.collect {TaskTypeLookup.getTaskFor(it)}
-            if (task.status == TaskStatus.NOT_REQUIRED) {
-                nextTasks.each {it.status == TaskStatus.NOT_REQUIRED}
-            }
-            handleNextVertices (vertex, currentTaskResult)
-            //handleNextTasks(nextTasks)
+        if (task.taskType == "StartTask") {
+            //no pre existing future state so create one here
+            CompletableFuture freshStart = CompletableFuture.completedFuture("""process [${processId}] started""".toString())
+            task.setPreviousTaskResults (Optional.empty(), freshStart)
         }
 
-        /*CompletableFuture result = task.execute()
-        result.whenComplete { res, throwable ->
-            if (throwable != null) {
-                log.error("Task execution failed for vertex [${vertex.name}]", throwable)
-            } else {
-                log.info("Task completed for vertex [${vertex.name}] with result [$res]")
-                handleNextVertices(task, vertex)
-            }
-        }*/
+        //do the executable bit of processing
+        def result
+        if (task.taskCategory == TaskCategories.Task ){
+            ExecutableTaskTrait etask = task
+            result = etask.execute()
 
+        } else if (task.taskCategory == TaskCategories.Gateway ) {
+            switch (task.taskType) {
+                case "JoinGateway":
+                    JoinGatewayTrait jg = task
+                    result = jg.join()
+                    break
+                case "ParallelGateway":
+                    ParallelGateway  pg = task
+                    result = pg.fork()
+                    break
+                default:
+                    //conditional gateways here
+                    break
+            }
+        }
+
+        //process the successor tasks
+        List<Task> successors = getTaskSuccessors (task)
+        successors.each { successor ->
+            successor.setPreviousTaskResults(Optional.of(task), task.taskResult)
+            // Update predecessor tracking for join nodes
+            if (successor.taskType instanceof  JoinGateway && task.status != TaskStatus.NOT_REQUIRED) {
+                //add to required tasks for the join
+                task.requiredPredecessors << task
+            }
+            //do this in parallel ?  successors.collectParall {-> processTask (it)} ??
+            processTask(successor)
+        }
     }
+
 
     /**
      * when ready in processTask - then execute the task through this
@@ -297,57 +319,41 @@ class ProcessInstance {
         }
     }
 
-    /**
-     * process current Task from graph tree in the process
-     * @param task
-     */
-    private void processTask (TaskTrait task) {
-        task.parentProcess = this
+    //reworked process sample
+    private void processVertex(Vertex vertex, Vertex previousVertex, CompletableFuture previousResult) {
+        TaskTrait task
+
+        task = getTaskForVertex (vertex)
+
         if (!task.isReadyToExecute()) {
-            //if not ready to run yet just wait till called again
             return
         }
 
-        if (task.taskType == "StartTask") {
-            //no pre existing future state so create one here
-            CompletableFuture freshStart = CompletableFuture.completedFuture("""process [${processId}] started""".toString())
-            task.setPreviousTaskResults (Optional.empty(), freshStart)
-        }
+        //set this process as parent for the task
+        task.setPreviousTaskResults(Optional.of(task), previousResult)
 
-        //do the executable bit of processing
-        def result
-        if (task.taskCategory == TaskCategories.Task ){
-            ExecutableTaskTrait etask = task
-            result = etask.execute()
+        this.executeTask(task)
 
-        } else if (task.taskCategory == TaskCategories.Gateway ) {
-            switch (task.taskType) {
-                case "JoinGateway":
-                    JoinGatewayTrait jg = task
-                    result = jg.join()
-                    break
-                case "ParallelGateway":
-                    ParallelGateway  pg = task
-                    result = pg.fork()
-                    break
-                default:
-                    //conditional gateways here
-                    break
+        if (status != ProcessState.Completed){
+            List<Vertex> nextVertices = graph.getToVertices(currentVertex.name)
+            List<Task> nextTasks = nextVertices.collect {TaskTypeLookup.getTaskFor(it)}
+            if (task.status == TaskStatus.NOT_REQUIRED) {
+                nextTasks.each {it.status == TaskStatus.NOT_REQUIRED}
             }
+            handleNextVertices (vertex, currentTaskResult)
+            //handleNextTasks(nextTasks)
         }
 
-        //process the successor tasks
-        List<Task> successors = getTaskSuccessors (task)
-        successors.each { successor ->
-            successor.setPreviousTaskResults(Optional.of(task), task.taskResult)
-            // Update predecessor tracking for join nodes
-            if (successor.taskType instanceof  JoinGateway && task.status != TaskStatus.NOT_REQUIRED) {
-                //add to required tasks for the join
-                task.requiredPredecessors << task
+        /*CompletableFuture result = task.execute()
+        result.whenComplete { res, throwable ->
+            if (throwable != null) {
+                log.error("Task execution failed for vertex [${vertex.name}]", throwable)
+            } else {
+                log.info("Task completed for vertex [${vertex.name}] with result [$res]")
+                handleNextVertices(task, vertex)
             }
-            //do this in parallel ?  successors.collectParall {-> processTask (it)} ??
-            processTask(successor)
-        }
+        }*/
+
     }
 
 }
