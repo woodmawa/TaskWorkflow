@@ -76,7 +76,7 @@ class StandardProcessTemplateInstance implements ProcessTemplate {
         processInstance.setProcessTemplate(this)
 
         log.info  "process " + processInstance.processId + " started "
-        processInstance.executeProcess (processVariables)
+        processInstance.startProcess (processVariables)
     }
 
     static TaskGraph helloWorldProcessDirected () {

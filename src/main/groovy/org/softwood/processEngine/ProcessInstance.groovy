@@ -3,7 +3,6 @@ package org.softwood.processEngine
 import groovy.transform.ToString
 import groovy.util.logging.Slf4j
 import org.softwood.gatewayTypes.ConditionalGatewayTrait
-import org.softwood.gatewayTypes.GatewayTrait
 import org.softwood.gatewayTypes.JoinGateway
 import org.softwood.gatewayTypes.JoinGatewayTrait
 import org.softwood.gatewayTypes.ParallelGateway
@@ -97,7 +96,7 @@ class ProcessInstance {
      * @param processVariables
      * @return
      */
-    ProcessInstance executeProcess(Map processVariables=[:]) {
+    ProcessInstance startProcess(Map processVariables=[:]) {
         log.info ("process [$processId] started from template ${fromTemplate.toString()}" )
         this.processVariables = processVariables
         startTime = LocalDateTime.now()
@@ -142,7 +141,7 @@ class ProcessInstance {
     private List<Task> getTaskSuccessors (Task currentTask) {
 
         List<Vertex> nextVertices = graph.getToVertices(currentTask.taskName)
-        List<Optional<Task>> nextTasks = nextVertices.collect {TaskTypeLookup.getTaskFor(it)}
+        List<Optional<Task>> nextTasks = nextVertices.collect {getTaskForVertex(it)}
         if (currentTask.status == TaskStatus.NOT_REQUIRED) {
             //set not required on all its successors - assumes no crossed beams in the graph!
             nextTasks.each {it.get().status == TaskStatus.NOT_REQUIRED}
