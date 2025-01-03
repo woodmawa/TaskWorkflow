@@ -7,6 +7,7 @@ import org.softwood.processEngine.ProcessInstance
 import java.time.Duration
 import java.time.LocalDateTime
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.ConcurrentSkipListSet
 
 @Slf4j
@@ -23,7 +24,7 @@ trait TaskTrait  implements  Task  {
     CompletableFuture taskResult
     Closure taskWork = {/* no op*/}
     //for first start task the previous task will be Optional.empty()
-    List<List> previousTaskResults = []
+    List<List> previousTaskResults = new ConcurrentLinkedQueue<>()
 
 
 
@@ -41,7 +42,7 @@ trait TaskTrait  implements  Task  {
                 //def predecessor = parentInstance.taskCache
                 //graph.lookupVertexByTaskName(predecessorName)
                 def isReady = (predecessor?.status != TaskStatus.NOT_STARTED ||
-                        predecessor?.status != TaskStatus.NOT_REQUIRED)
+                        predecessor?.status != TaskStatus.NOT_REQUIRED )
             }
         }
         // Regular nodes just need to be NOT_STARTED
@@ -53,8 +54,14 @@ trait TaskTrait  implements  Task  {
         parentProcess
     }
 
+    /**
+     * add previous task, expected type and Future for the task result
+     * @param previousTask
+     * @param expectedFutureType
+     * @param result
+     */
     void setPreviousTaskResults (Optional<Task> previousTask, CompletableFuture result) {
-        previousTaskResults << [previousTask,result]
+        previousTaskResults << [previousTask, result]
     }
 
     List<List> getPreviousTaskResults () {

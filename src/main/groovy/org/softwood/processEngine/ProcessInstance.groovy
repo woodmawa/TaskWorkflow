@@ -159,6 +159,7 @@ class ProcessInstance {
      * @param task
      */
     private void processTask (TaskTrait task) {
+        //add this process instance as parent for the task to be processed
         task.parentProcess = this
         if (!task.isReadyToExecute()) {
             //if not ready to run yet just wait till called again
