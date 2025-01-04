@@ -24,14 +24,10 @@ class EndTask implements ExecutableTaskTrait {
        //initiate any tidy up actions
         if (inputVariables)
             taskVariables = inputVariables
-        tidyUpProcess (taskVariables)
         log.info "endTask: tidying up current task branch "
 
         taskResult = CompletableFuture.completedFuture("end task '$taskName' completed")
     }
 
-    @Override
-    String getTaskType() {
-        return taskType
-    }
+
 }

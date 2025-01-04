@@ -2,6 +2,7 @@ package org.softwood.tryout
 
 
 import org.softwood.gatewayTypes.ExclusiveGateway
+import org.softwood.gatewayTypes.JoinGateway
 import org.softwood.gatewayTypes.ParallelGateway
 import org.softwood.processEngine.ProcessHistory
 import org.softwood.processEngine.ProcessInstance
@@ -92,14 +93,21 @@ TaskGraph graph2 = new TaskGraph()
 def start2 = graph2.addVertex("start2", StartTask)
 def script2 = graph2.addVertex("script2", ScriptTask)
 def par2 = graph2.addVertex("fork2", ParallelGateway)
+
+def leftfork2 = graph2.addVertex("leftFork2", ScriptTask)
+def rightfork2 = graph2.addVertex("rightFork2", ScriptTask)
+
+def join2 = graph2.addVertex("join2", JoinGateway)
+def terminate2 = graph2.addVertex("term2", TerminateTask)
 //def end2 = graph2.addVertex("end", EndTask)
-def leftfork2 = graph2.addVertex("leftFork2", EndTask)
-def rightfork2 = graph2.addVertex("rightFork2", TerminateTask)
+
 graph2.addEdge(start2, script2)
 graph2.addEdge(script2, par2)
 graph2.addEdge(par2, leftfork2)
 graph2.addEdge(par2, rightfork2)
-
+graph2.addEdge(leftfork2, join2)
+graph2.addEdge(rightfork2, join2)
+graph2.addEdge(join2, terminate2)
 
 /*@Lookup ("processTemplateInstance")
 ProcessTemplate getProcessTemplate () {  //String name, version ="1.0"

@@ -20,13 +20,13 @@ class TerminateTask implements ExecutableTaskTrait {
         taskVariables = variables ?: taskVariables
         if (taskInitialisation)
             taskInitialisation (taskVariables)
-        parentInstance.tidyUpProcessAndExit()
+
         log.info "TerminateTask: terminated process ${parentInstance.getProcessId()}, and exit "
+
+        //close out the parent process
+        parentInstance.tidyUpProcessAndExit()
+
         taskResult = CompletableFuture.completedFuture("terminate complete process task '$taskName' completed")
     }
 
-    @Override
-    String getTaskType() {
-        taskType
-    }
 }

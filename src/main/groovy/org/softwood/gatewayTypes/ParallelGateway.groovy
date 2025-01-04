@@ -2,6 +2,7 @@ package org.softwood.gatewayTypes
 
 import groovy.transform.ToString
 import groovy.util.logging.Slf4j
+import org.softwood.graph.Vertex
 import org.softwood.taskTypes.Task
 import org.softwood.taskTypes.TaskCategories
 
@@ -30,7 +31,10 @@ class ParallelGateway implements GatewayTrait {
             out << [++counter, opTask.get(), (CompletableFuture) taskAndResult[1]]
         }
         println "--> parallel gw : previousTaskResults " + out
-        Optional.of (out)
+
+        //only expecting one previous task going into a parallel gateway
+        //so relay the parallel gateways previousTaskResult future to be that for the parallel node
+        taskResult = previousTaskResults[0][1]  //relay the input
     }
 
     public def fork (Map value=[:]) {
@@ -39,7 +43,7 @@ class ParallelGateway implements GatewayTrait {
         result
     }
 
-    List forkedTasks () {
+    List<Vertex> forkedTasks () {
         def forkedTasks = parentProcess.graph.getFromVertices(this.taskName)
         forkedTasks
     }

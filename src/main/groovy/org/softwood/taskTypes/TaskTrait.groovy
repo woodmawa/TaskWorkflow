@@ -116,6 +116,14 @@ trait TaskTrait  implements  Task  {
     }
 
     /**
+     * helper routine tidy, can be overriden in implementing class to tidy up an
+     * resources used by the task
+     */
+    def tidyUpTaskResources () {
+        log.debug "tidy up any task resources called "
+    }
+
+    /**
      * sets up state for running task
      * @param state
      * @param taskVariables
@@ -136,6 +144,8 @@ trait TaskTrait  implements  Task  {
     CompletableFuture closeOutTask (TaskStatus state) {
         endTime = LocalDateTime.now()
         status = state
+        tidyUpTaskResources()
+
         taskResult     //just return the taskResult future
     }
 

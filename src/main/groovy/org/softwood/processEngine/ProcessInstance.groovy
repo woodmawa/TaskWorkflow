@@ -22,6 +22,7 @@ import org.springframework.stereotype.Component
 import java.time.LocalDateTime
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
+import static java.util.stream.Collectors.*
 
 @ToString
 @Slf4j
@@ -149,18 +150,18 @@ class ProcessInstance {
         } else {
             //take the current tasks future result and add that to each successor
             successors.each { task ->
+                //take current tasks future result, and add that to each successor
                 task.setPreviousTaskResults(Optional.of(currentTask), currentTask.taskResult)
                 // Update predecessor tracking for join nodes
                 if (task.taskType instanceof JoinGateway && task.status != TaskStatus.NOT_REQUIRED) {
                     //add to required tasks for the join
                     JoinGatewayTrait gwtask = task
                     gwtask.requiredPredecessors << currentTask
-                } else if (task.taskType instanceof ParallelGateway){
+                }
+                /*else if (task.taskType instanceof ParallelGateway){
                     ParallelGateway pgtask = task
                     //pgtask.
-
-
-                }
+                }*/
             }
         }
     }
@@ -196,162 +197,17 @@ class ProcessInstance {
                     break
             }
         }
+        TaskHistory.closedTasks << [this.processId, task]
 
         //process the successor tasks
         List<Task> successors = getTaskSuccessors (task)
+        /*List<CompletableFuture> futureResults = successors.parallelStream()
+                .map {Task successor -> processTask(successor)}
+                .collect(toList())*/
+
+        //sequential process the list for now
         successors.each { successor ->
-            //do this in parallel ?  successors.collectParall {-> processTask (it)} ??
             processTask(successor)
         }
     }
-
-
-    /**
-     * when ready in processTask - then execute the task through this
-     * @param task
-     * @return
-     */
-    private def executeTask (Task task) {
-        CompletableFuture currentTaskResult
-
-        if (task.taskCategory == TaskCategories.Task) {
-            ExecutableTaskTrait etask = task
-            switch ( etask.taskType) {
-                case "StartTask" :
-                    //if first start task - then set previous task result with optional empty
-                    etask.setPreviousTaskResults(Optional.empty(), previousResult)
-                    currentTaskResult = etask.execute()
-                    break
-                case "EndTask" :
-                    currentTaskResult = etask.execute()  // Execute and run tidy up
-
-                    log.info("End of process [$processId] with variables " + processVariables.toString())
-                    break
-                case "ScriptTask" :
-                    currentTaskResult = etask.execute()
-                    break
-                case "TerminateTask":
-                    currentTaskResult = etask.execute()
-                    break
-
-                default :
-                    log.info("Next task [$etask.taskName] is of category  [$etask.taskCategory]")
-                    break
-            }
-        } else if (task.taskCategory == TaskCategories.Gateway) {
-            switch (task.taskType) {
-                case "ParallelGateway":
-                    println "parallel: execute all the outgoing paths "
-                    ParallelGateway forkTask = task
-                    forkTask.fork()     //start all paths out from
-                    List<Vertex> forkedTasks = forkTask.forkedTasks()
-                    for (taskVertex in forkedTasks ){
-                        //may work below and not be necessary
-                    }
-
-                    break
-                case "ExclusiveGateway":
-                    ConditionalGatewayTrait cgtask = task
-                    cgtask.conditionsMap = vertex.conditionsMap
-                    cgtask.setPreviousTaskResults(Optional.of(previousVertex), previousResult)
-                    println "exclusive: evaluate conditions and pick single path to follow "
-                    def condRes = cgtask.evaluateConditions('Will')
-                    log.info "exclusive gateway : evaluated conditions result : " + condRes
-                    break
-                case "InclusiveGateway":
-                    println "inclusive: pick all paths where condition check is true  "
-                    ConditionalGatewayTrait cgtask = task
-                    cgtask.conditionsMap = vertex.conditionsMap
-                    cgtask.setPreviousTaskResults(Optional.of(previousVertex), previousResult)
-
-                    break
-                case "JoinGateway":
-                    JoinGateway joinTask = task
-                    //get expected number of inputs
-                    List<Vertex> predecessors = graph.getFromVertices(vertex)
-                    List<Task> predecessorTasks = predecessors.collect {TaskTypeLookup.getTaskFor(it)}
-                    return predecessorTasks.collect {it.taskResult}
-
-                    ///la la la
-                    //int latchExpectedInputs = nextVertices?.size()
-                    //joinTask.latch = new CountDownLatch(latchExpectedInputs)  //setup the expected numbers of join inputs
-                    break
-
-                default:
-                    log.info("Next Gateway task [$task.taskName] is of category  [$task.taskCategory]")
-                    /*return vertex.conditionsMap.every { name, condition ->
-                        condition.call(vertex)
-                    }*/
-                    break
-            }
-
-        }
-        //record that this task was in fact processed by the traversal process
-        TaskHistory.closedTasks << [this.processId, task]
-    }
-
-    private void handleNextTasks(List<Task> tasks){
-        log.info "processing successor tasks for  '${currentVertex.name}'"
-
-        Task currentTask
-
-        for (Task task : tasks) {
-
-            processVertex(nextVertex, currentVertex, previousTaskResult)
-        }
-    }
-
-    private void handleNextVertices(Vertex currentVertex, CompletableFuture previousTaskResult) {
-        log.info "processing process graph vertex '${currentVertex.name}'"
-        List<Vertex> nextVertices = graph.getToVertices(currentVertex.name)
-
-        Task currentTask
-        if (currentTask = TaskTypeLookup.getTaskFor(currentVertex)) {
-            if (currentTask.status == TaskStatus.NOT_REQUIRED) {
-                //set not not required on successors
-            }
-        }
-        for (Vertex nextVertex : nextVertices) {
-
-            processVertex(nextVertex, currentVertex, previousTaskResult)
-        }
-    }
-
-    //reworked process sample
-    private void processVertex(Vertex vertex, Vertex previousVertex, CompletableFuture previousResult) {
-        TaskTrait task
-
-        task = getTaskForVertex (vertex)
-
-        if (!task.isReadyToExecute()) {
-            return
-        }
-
-        //set this process as parent for the task
-        task.setPreviousTaskResults(Optional.of(task), previousResult)
-
-        this.executeTask(task)
-
-        if (status != ProcessState.Completed){
-            List<Vertex> nextVertices = graph.getToVertices(currentVertex.name)
-            List<Task> nextTasks = nextVertices.collect {TaskTypeLookup.getTaskFor(it)}
-            if (task.status == TaskStatus.NOT_REQUIRED) {
-                nextTasks.each {it.status == TaskStatus.NOT_REQUIRED}
-            }
-            handleNextVertices (vertex, currentTaskResult)
-            //handleNextTasks(nextTasks)
-        }
-
-        /*CompletableFuture result = task.execute()
-        result.whenComplete { res, throwable ->
-            if (throwable != null) {
-                log.error("Task execution failed for vertex [${vertex.name}]", throwable)
-            } else {
-                log.info("Task completed for vertex [${vertex.name}] with result [$res]")
-                handleNextVertices(task, vertex)
-            }
-        }*/
-
-    }
-
 }
