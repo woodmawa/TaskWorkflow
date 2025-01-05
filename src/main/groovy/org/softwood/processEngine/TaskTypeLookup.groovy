@@ -28,6 +28,7 @@ class TaskTypeLookup {
         taskTypeLookup.putIfAbsent( ExclusiveGateway.class.simpleName, ExclusiveGateway )
         taskTypeLookup.putIfAbsent( InclusiveGateway.class.simpleName, InclusiveGateway )
         taskTypeLookup.putIfAbsent( ParallelGateway.class.simpleName, ParallelGateway )
+        taskTypeLookup.putIfAbsent( JoinGateway.class.simpleName, JoinGateway )
 
     }
 

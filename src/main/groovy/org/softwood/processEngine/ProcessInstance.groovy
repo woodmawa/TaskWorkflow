@@ -148,22 +148,42 @@ class ProcessInstance {
             //set not required on all its successors - assumes no crossed beams in the graph!
             successors.each {it.status == TaskStatus.NOT_REQUIRED}
         } else {
+            List<TaskTrait> requiredSuccessors = successors.findAll {it.status != TaskStatus.NOT_REQUIRED }
+            int req = requiredSuccessors.size()
             //take the current tasks future result and add that to each successor
-            successors.each { task ->
+            requiredSuccessors.each { stask ->
                 //take current tasks future result, and add that to each successor
-                task.setPreviousTaskResults(Optional.of(currentTask), currentTask.taskResult)
+                stask.setPreviousTaskResults(Optional.of(currentTask), currentTask.taskResult)
                 // Update predecessor tracking for join nodes
-                if (task.taskType instanceof JoinGateway && task.status != TaskStatus.NOT_REQUIRED) {
+                if (stask.taskType == "JoinGateway" && currentTask.status != TaskStatus.NOT_REQUIRED) {
                     //add to required tasks for the join
-                    JoinGatewayTrait gwtask = task
-                    gwtask.requiredPredecessors << currentTask
+                    JoinGateway gwtask = stask
+                    gwtask.requiredPredecessors.add( currentTask)
                 }
-                /*else if (task.taskType instanceof ParallelGateway){
-                    ParallelGateway pgtask = task
-                    //pgtask.
-                }*/
+                stask
+
             }
+            requiredSuccessors
         }
+    }
+
+    /**
+     * get list of predecessor actioned tasks
+     * @param currentTask
+     * @return
+     */
+    private List<Task> getTaskPredecessors (Task currentTask) {
+
+        List<Vertex> predecessorVertices = graph.getFromVertices(currentTask.taskName)
+        List<TaskTrait> predecessors = predecessorVertices.collect {getTaskForVertex(it)}
+
+        List<TaskTrait> requiredPredecessors = predecessors.findAll {it.status != TaskStatus.NOT_REQUIRED }
+        int req = requiredPredecessors.size()
+            //take the current tasks future result and add that to each successor
+        requiredPredecessors.each { preTask ->
+                //take current tasks future result, and add that to each successor
+        }
+        requiredPredecessors
     }
 
     /**

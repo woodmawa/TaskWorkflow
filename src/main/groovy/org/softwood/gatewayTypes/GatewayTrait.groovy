@@ -25,7 +25,7 @@ trait GatewayTrait extends TaskTrait {
             closeOutTask (TaskStatus.COMPLETED)
         } catch (Exception exception) {
             log.info "TaskTrait: gateway resource, action.doCall threw exception $exception with delegate set as $action.delegate"
-            closeOutTask(TaskStatus.EXCEPTION, exception)
+            closeOutTask(TaskStatus.EXCEPTION)
         }
     }
 

@@ -28,7 +28,7 @@ trait TaskTrait  implements  Task  {
     List<List> previousTaskResults = []
     Map initialValues = new ConcurrentHashMap()
     //required to track the join task ready to run calculation
-    Set<Task> requiredPredecessors = new ConcurrentSkipListSet()
+    List<Task> requiredPredecessors = []  //todo needs to be concurrent something ...
 
     /**
      * determines if all the predecessor tasks for a join have completed
@@ -36,12 +36,16 @@ trait TaskTrait  implements  Task  {
      */
     boolean isReadyToExecute() {
         // Special logic for join nodes, check all predessors have completed
-        if (taskType == "JoinTask") {
+        if (getTaskType() == "JoinGateway") {
+            //are all predecessors running or not required ?
+
+            List<TaskTrait> requiredTasks //todo complete here
             return requiredPredecessors.every { Task predecessor ->
                 //def predecessor = parentInstance.taskCache
                 //graph.lookupVertexByTaskName(predecessorName)
                 def isReady = (predecessor?.status != TaskStatus.NOT_STARTED ||
                         predecessor?.status != TaskStatus.NOT_REQUIRED )
+                isReady
             }
         }
         // Regular nodes just need to be NOT_STARTED
