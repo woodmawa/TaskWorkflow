@@ -39,7 +39,16 @@ trait TaskTrait  implements  Task  {
         if (getTaskType() == "JoinGateway") {
             //are all predecessors running or not required ?
 
-            List<TaskTrait> requiredTasks //todo complete here
+            List<TaskTrait> requiredTasks =  this.parentInstance.getActionableTaskPredecessors (this)
+            int expectedActionableTasks = requiredPredecessors.size()
+
+            def done = (expectedActionableTasks == requiredPredecessors.size())
+
+            //take the current tasks future result and add that to each successor
+            requiredPredecessors.each { preTask ->
+                //take current tasks future result, and add that to each successor
+            }
+
             return requiredPredecessors.every { Task predecessor ->
                 //def predecessor = parentInstance.taskCache
                 //graph.lookupVertexByTaskName(predecessorName)

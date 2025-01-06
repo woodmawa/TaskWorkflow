@@ -172,17 +172,12 @@ class ProcessInstance {
      * @param currentTask
      * @return
      */
-    private List<Task> getTaskPredecessors (Task currentTask) {
+    private List<Task> getActionableTaskPredecessors (Task currentTask) {
 
         List<Vertex> predecessorVertices = graph.getFromVertices(currentTask.taskName)
         List<TaskTrait> predecessors = predecessorVertices.collect {getTaskForVertex(it)}
 
         List<TaskTrait> requiredPredecessors = predecessors.findAll {it.status != TaskStatus.NOT_REQUIRED }
-        int req = requiredPredecessors.size()
-            //take the current tasks future result and add that to each successor
-        requiredPredecessors.each { preTask ->
-                //take current tasks future result, and add that to each successor
-        }
         requiredPredecessors
     }
 
