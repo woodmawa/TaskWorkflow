@@ -40,22 +40,13 @@ trait TaskTrait  implements  Task  {
             //are all predecessors running or not required ?
 
             List<TaskTrait> requiredTasks =  this.parentInstance.getActionableTaskPredecessors (this)
-            int expectedActionableTasks = requiredPredecessors.size()
+            int expectedActionableTasks = requiredTasks.size()
 
-            def done = (expectedActionableTasks == requiredPredecessors.size())
+            //check if all the requiredPredecessor tasks have been posted yet
+            def isReady = (expectedActionableTasks == requiredPredecessors.size()) ?true :false
+            return isReady
 
-            //take the current tasks future result and add that to each successor
-            requiredPredecessors.each { preTask ->
-                //take current tasks future result, and add that to each successor
-            }
 
-            return requiredPredecessors.every { Task predecessor ->
-                //def predecessor = parentInstance.taskCache
-                //graph.lookupVertexByTaskName(predecessorName)
-                def isReady = (predecessor?.status != TaskStatus.NOT_STARTED ||
-                        predecessor?.status != TaskStatus.NOT_REQUIRED )
-                isReady
-            }
         }
         // Regular nodes just need to be NOT_STARTED
         return status == TaskStatus.NOT_STARTED
