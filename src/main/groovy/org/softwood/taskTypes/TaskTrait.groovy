@@ -42,8 +42,11 @@ trait TaskTrait  implements  Task  {
             List<TaskTrait> requiredTasks =  this.parentInstance.getActionableTaskPredecessors (this)
             int expectedActionableTasks = requiredTasks.size()
 
+            //check how many have been posted yet
+            int requiredPredecessorListSize = requiredPredecessors.size()
+
             //check if all the requiredPredecessor tasks have been posted yet
-            def isReady = (expectedActionableTasks == requiredPredecessors.size()) ?true :false
+            def isReady = (expectedActionableTasks == requiredPredecessorListSize) ?true :false
             return isReady
 
 
@@ -113,6 +116,9 @@ trait TaskTrait  implements  Task  {
         process.addTaskToProcessRunTasks (this)
     }
 
+    void setRequiredPredecessors (Task task) {
+        requiredPredecessors.add(task)
+    }
 
     String executionDuration () {
         Duration duration = Duration.between(startTime, endTime)

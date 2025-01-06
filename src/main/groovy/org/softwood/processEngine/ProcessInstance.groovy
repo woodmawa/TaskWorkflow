@@ -158,7 +158,7 @@ class ProcessInstance {
                 if (stask.taskType == "JoinGateway" && currentTask.status != TaskStatus.NOT_REQUIRED) {
                     //add to required tasks for the join
                     JoinGateway gwtask = stask
-                    gwtask.requiredPredecessors.add( currentTask)
+                    gwtask.setRequiredPredecessors(currentTask)
                 }
                 stask
 
@@ -212,17 +212,21 @@ class ProcessInstance {
                     break
             }
         }
-        TaskHistory.closedTasks << [this.processId, task]
 
-        //process the successor tasks
-        List<Task> successors = getTaskSuccessors (task)
-        /*List<CompletableFuture> futureResults = successors.parallelStream()
+        if (task.status == TaskStatus.COMPLETED) {
+            TaskHistory.closedTasks << [this.processId, task]
+
+
+            //process the successor tasks
+            List<Task> successors = getTaskSuccessors(task)
+            /*List<CompletableFuture> futureResults = successors.parallelStream()
                 .map {Task successor -> processTask(successor)}
                 .collect(toList())*/
 
-        //sequential process the list for now
-        successors.each { successor ->
-            processTask(successor)
+            //sequential process the list for now
+            successors.each { successor ->
+                processTask(successor)
+            }
         }
     }
 }

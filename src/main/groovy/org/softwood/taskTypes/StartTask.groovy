@@ -28,8 +28,5 @@ class StartTask implements ExecutableTaskTrait {
         taskResult = CompletableFuture.completedFuture("start task '$taskName' completed")
     }
 
-    @Override
-    String getTaskType() {
-        taskType
-    }
+
 }
