@@ -23,9 +23,6 @@ class TerminateTask implements ExecutableTaskTrait {
 
         log.info "TerminateTask: terminated process ${parentInstance.getProcessId()}, and exit "
 
-        //close out the parent process
-        parentInstance.tidyUpProcessAndExit()
-
         taskResult = CompletableFuture.completedFuture("terminate complete process task '$taskName' completed")
     }
 

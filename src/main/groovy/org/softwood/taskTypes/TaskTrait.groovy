@@ -3,6 +3,7 @@ package org.softwood.taskTypes
 import groovy.util.logging.Slf4j
 import org.softwood.graph.Vertex
 import org.softwood.processEngine.ProcessInstance
+import org.softwood.processEngine.TaskHistory
 
 import java.time.Duration
 import java.time.LocalDateTime
@@ -130,6 +131,7 @@ trait TaskTrait  implements  Task  {
      * resources used by the task
      */
     def tidyUpTaskResources () {
+        TaskHistory.addCompletedTask(this)
         log.debug "tidy up any task resources called "
     }
 

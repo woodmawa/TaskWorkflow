@@ -18,20 +18,25 @@ class JoinGateway implements JoinGatewayTrait  {
     }
 
     private def doJoin (Map variables = [:]) {
-        List<CompletableFuture> futureResults = requiredPredecessors.collect{it.taskResult}
+        //should only have got here if all the requiredPredecessors had been posted
+        List<CompletableFuture> predecessorTaskFutures = requiredPredecessors.collect{it.taskResult}
+
         //wait for all the futures to complete
-        if (futureResults) {
-            CompletableFuture<Void> allDone = CompletableFuture.allOf(*futureResults).join()
-            allDone.whenComplete { log.info "all gateway predecessors now complete " }
+        CompletableFuture<Void> allDone
+        if (predecessorTaskFutures) {
+            CompletableFuture.allOf(*predecessorTaskFutures).join()
         }
+
+        def combinedTaskResults = predecessorTaskFutures.collect {it.get()}
         //tbc
         List out = []
         int counter = 0
-        List previous = previousTaskResults
-        previous.each { Map.Entry<String, Closure> entry ->
-            out << [++counter, entry.getKey(), entry.getValue()?.call()]
+        List<List> previousResults = previousTaskResults
+        previousResults.each { List<Optional,CompletableFuture> entry ->
+            out << [++counter, entry[0]?.get(), entry[1]?.get()]
         }
-        out
+        //taskResult future is the merge of the various task, and there completed results
+        taskResult = CompletableFuture.completedFuture (out)
     }
 
 

@@ -19,6 +19,7 @@ import org.springframework.beans.factory.config.ConfigurableBeanFactory
 import org.springframework.context.annotation.Scope
 import org.springframework.stereotype.Component
 
+import java.time.Duration
 import java.time.LocalDateTime
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
@@ -26,7 +27,7 @@ import java.util.concurrent.CountDownLatch
 
 import static java.util.stream.Collectors.*
 
-@ToString
+@ToString (includeNames =true, includes = ["processId", "startTime", "endTime"])
 @Slf4j
 @Component
 @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
@@ -51,8 +52,8 @@ class ProcessInstance {
     TaskGraph graph
     LocalDateTime startTime, endTime
     Closure lastGasp = {}
-    Map runTaskReferenceLookup = new ConcurrentHashMap()
-    Map vertexTaskCache = new ConcurrentHashMap()
+    Map<String, Task> runTaskReferenceLookup = new ConcurrentHashMap<>()
+    Map<String, Task> vertexTaskCache = new ConcurrentHashMap<>()
 
     ProcessInstance () {
         processVariables = [:]
@@ -83,7 +84,7 @@ class ProcessInstance {
         if (lastGasp)
             lastGasp()
 
-        ProcessHistory.closedProcesses << this
+        ProcessHistory.addCompletedProcess(this)
 
         status = ProcessState.Completed
         this
@@ -109,19 +110,27 @@ class ProcessInstance {
 
         processTask (startTask)
 
-        this
+
+        //close out the process, and write to history
+        pi.tidyUpProcessAndExit()
+
+        pi
 
     }
 
     /**
      * helper function, looks in process instance cache first, and returns task if it exists, elses goes to
      * factory  TaskTypeLookup to generate the nex task, and sets refereence in the cache
+     *
+     * note whilst 2 vertex with same name are 'equal' the is test is not true
+     * try to ensure that for a process there is only one task in the taskCache using
+     * vertex.name as the key
      * @param vertex
      */
     private Task getTaskForVertex (Vertex vertex, Map initialValues=[:]) {
         TaskTrait task
-        if (vertexTaskCache.contains (vertex)) {
-            task = vertexTaskCache.get(vertex)
+        if (vertexTaskCache.containsKey (vertex.toString())) {
+            task = vertexTaskCache.get(vertex.toString())
         } else {
             Optional<Task> optionalTask = TaskTypeLookup.getTaskFor(vertex, [taskName: vertex.name])
             if (optionalTask.isEmpty()) {
@@ -142,7 +151,7 @@ class ProcessInstance {
                 }
 
             }
-            task.parentProcess.vertexTaskCache.putIfAbsent(vertex, task) //add task to cache for this process
+            task.parentProcess.vertexTaskCache.putIfAbsent(vertex.toString(), task) //add task to cache for this process
         }
         task
     }
@@ -155,12 +164,12 @@ class ProcessInstance {
     private List<Task> getTaskSuccessors (Task currentTask) {
 
         List<Vertex> nextVertices = graph.getToVertices(currentTask.taskName)
-        List<TaskTrait> successors = nextVertices.collect {getTaskForVertex(it)}
+        List<TaskTrait> allSuccessors = nextVertices.collect {getTaskForVertex(it)}
         if (currentTask.status == TaskStatus.NOT_REQUIRED) {
             //set not required on all its successors - assumes no crossed beams in the graph!
-            successors.each {if (it.taskType != "JoinGateway") it.status = TaskStatus.NOT_REQUIRED }
+            allSuccessors.each {if (it.taskType != "JoinGateway") it.status = TaskStatus.NOT_REQUIRED }
         } else {
-            List<TaskTrait> requiredSuccessors = successors.findAll {it.status != TaskStatus.NOT_REQUIRED }
+            List<TaskTrait> requiredSuccessors = allSuccessors.findAll {it.status != TaskStatus.NOT_REQUIRED }
             int req = requiredSuccessors.size()
             //take the current tasks future result and add that to each successor
             requiredSuccessors.each { stask ->
@@ -227,7 +236,7 @@ class ProcessInstance {
         }
 
         if (task.status == TaskStatus.COMPLETED) {
-            TaskHistory.closedTasks << [this.processId, task]
+            //TaskHistory.addCompletedTask([this.processId, task])
 
 
             //process the successor tasks
@@ -242,4 +251,10 @@ class ProcessInstance {
             }
         }
     }
+
+    String executionDuration () {
+        Duration duration = Duration.between(startTime, endTime)
+        String formattedDuration =String.format("task execution time: %d ms", duration.toMillis())
+    }
+
 }

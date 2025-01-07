@@ -91,7 +91,9 @@ graph.addEdgeWithCondition(decision, end, cond )
 
 TaskGraph graph2 = new TaskGraph()
 def start2 = graph2.addVertex("start2", StartTask)
+def start2Alt = graph2.addVertex("start2", StartTask)
 def script2 = graph2.addVertex("script2", ScriptTask)
+
 def par2 = graph2.addVertex("fork2", ParallelGateway)
 
 def leftfork2 = graph2.addVertex("leftFork2", ScriptTask)
@@ -142,14 +144,15 @@ ProcessTemplate template2 = latestGw.get()
 //ProcessInstance pi = template.startProcess([var: 'will'])
 ProcessInstance pi = template2.startProcess([var: 'will'])
 
+println "process completed in : ${pi.executionDuration()}"
 
-List completedProcess = ProcessHistory.closedProcesses
+List completedProcess = ProcessHistory.completedProcesses
 completedProcess.each  {
-    println "completed process : " + it
+    println "completed processes : " + it
 }
 
-List completedTasks = TaskHistory.closedTasks
-completedProcess.each  {
+List completedTasks = TaskHistory.completedTasks
+completedTasks.each  {
     println "completed tasks : " + it
 }
 
