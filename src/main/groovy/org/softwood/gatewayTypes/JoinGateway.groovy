@@ -12,7 +12,6 @@ import java.util.concurrent.CountDownLatch
 class JoinGateway implements JoinGatewayTrait  {
     String taskType = this.class.getSimpleName()
     TaskCategories taskCategory = TaskCategories.Gateway
-    CountDownLatch latch
 
     JoinGateway () {
         taskWork = JoinGateway::doJoin  //link work to correct do work method

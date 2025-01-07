@@ -22,6 +22,8 @@ import org.springframework.stereotype.Component
 import java.time.LocalDateTime
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.CountDownLatch
+
 import static java.util.stream.Collectors.*
 
 @ToString
@@ -130,6 +132,16 @@ class ProcessInstance {
             task = optionalTask.get()
             task.setInitialValues ( initialValues?: [:])
             task.parentProcess = this
+
+            if (task.taskType == "JoinGateway") {
+                JoinGateway gwTask = task
+                if (gwTask.latch == null ) {
+                    def expectedInputsList = getActionableTaskPredecessors (gwTask)
+                    int expectedNumberInputs = expectedInputsList?.size()
+                    gwTask.latch = new CountDownLatch(expectedNumberInputs)
+                }
+
+            }
             task.parentProcess.vertexTaskCache.putIfAbsent(vertex, task) //add task to cache for this process
         }
         task
@@ -146,7 +158,7 @@ class ProcessInstance {
         List<TaskTrait> successors = nextVertices.collect {getTaskForVertex(it)}
         if (currentTask.status == TaskStatus.NOT_REQUIRED) {
             //set not required on all its successors - assumes no crossed beams in the graph!
-            successors.each {it.status == TaskStatus.NOT_REQUIRED}
+            successors.each {if (it.taskType != "JoinGateway") it.status = TaskStatus.NOT_REQUIRED }
         } else {
             List<TaskTrait> requiredSuccessors = successors.findAll {it.status != TaskStatus.NOT_REQUIRED }
             int req = requiredSuccessors.size()
@@ -159,6 +171,7 @@ class ProcessInstance {
                     //add to required tasks for the join
                     JoinGateway gwtask = stask
                     gwtask.setRequiredPredecessors(currentTask)
+                    gwtask.latch?.countDown()
                 }
                 stask
 

@@ -4,12 +4,17 @@ import groovy.util.logging.Slf4j
 import org.softwood.taskTypes.TaskStatus
 
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.CountDownLatch
 
 @Slf4j
 trait JoinGatewayTrait extends GatewayTrait{
 
+    //make this visible across all threads
+    volatile CountDownLatch latch
+
     //run relevant work closure for this task type
     public def join () {
+
         if (!this.isReadyToExecute()) {
             //if not ready to run yet just wait till called again
             log.info "join task $this.taskName, didnt have all its requiredPredecessors added yet, cycle round till called again "

@@ -28,7 +28,7 @@ trait TaskTrait  implements  Task  {
     List<List> previousTaskResults = []
     Map initialValues = new ConcurrentHashMap()
     //required to track the join task ready to run calculation
-    List<Task> requiredPredecessors = []  //todo needs to be concurrent something ...
+    Queue<Task> requiredPredecessors = new ConcurrentLinkedQueue<>()
 
     /**
      * determines if all the predecessor tasks for a join have completed
