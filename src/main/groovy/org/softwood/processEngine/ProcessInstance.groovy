@@ -112,7 +112,7 @@ class ProcessInstance {
 
 
         //close out the process, and write to history
-        pi.tidyUpProcessAndExit()
+        tidyUpProcessAndExit()
 
         pi
 
