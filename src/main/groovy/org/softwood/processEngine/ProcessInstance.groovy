@@ -151,7 +151,7 @@ class ProcessInstance {
                 }
 
             }
-            task.parentProcess.vertexTaskCache.putIfAbsent(vertex.toString(), task) //add task to cache for this process
+            task.parentProcess.addTaskToCache(task) //add task to cache for this process
         }
         task
     }
@@ -170,7 +170,7 @@ class ProcessInstance {
             allSuccessors.each {if (it.taskType != "JoinGateway") it.status = TaskStatus.NOT_REQUIRED }
         } else {
             List<TaskTrait> requiredSuccessors = allSuccessors.findAll {it.status != TaskStatus.NOT_REQUIRED }
-            int req = requiredSuccessors.size()
+
             //take the current tasks future result and add that to each successor
             requiredSuccessors.each { stask ->
                 //take current tasks future result, and add that to each successor
