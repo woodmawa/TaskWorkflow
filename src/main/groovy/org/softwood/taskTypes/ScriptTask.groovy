@@ -3,18 +3,19 @@ package org.softwood.taskTypes
 import groovy.transform.InheritConstructors
 import groovy.transform.ToString
 import groovy.util.logging.Slf4j
-import org.softwood.taskTypes.secureScriptBase.SecureScriptBase
+import org.codehaus.groovy.control.CompilerConfiguration
+import org.softwood.taskTypes.secureScriptBase.SecureBaseScript
 
 import java.util.concurrent.CompletableFuture
 
 @InheritConstructors
 @Slf4j
-class TaskScript extends SecureScriptBase {
+class TaskScript extends SecureBaseScript {
 
     Closure work = {"no-op"}
 
     //throws SecurityException on validation failure of any user input
-    Object run(userInput) {
+    def run() {
         log.debug "TaskScript: run the work closure and return result (default is 'done') "
         def result = work.call()
         return result
@@ -24,20 +25,20 @@ class TaskScript extends SecureScriptBase {
 class ScriptEvaluator {
 
     static Closure evaluateSecure (String scriptText, TaskTrait task ) {
-        GroovyShell shell = new GroovyShell()
+        CompilerConfiguration config = new CompilerConfiguration()
+        config.setScriptBaseClass(TaskScript.getClass().name)
+        GroovyShell shell = new GroovyShell(new Binding(), config)
 
         shell.setVariable("processVariables", task.parentProcess.processVariables )
         shell.setVariable("taskVariables",task.taskVariables )
         shell.setVariable("task",task )
 
         // Create a closure from the script text
-        Closure scriptClosure = shell.parse(scriptText)
+        TaskScript secureScript = shell.parse(scriptText)
+        secureScript.work = secureScript.&run
 
-        // Wrap the closure with SecureScriptBase
-        Closure secureScript = new SecureScriptBase(scriptClosure)
-
-        // Execute the secure script
-        return secureScript()
+     // Execute the secure script
+        return secureScript::run
     }
 }
 
@@ -46,15 +47,16 @@ class ScriptEvaluator {
 class ScriptTask implements ExecutableTaskTrait {
     String taskType = this.class.getSimpleName()
     TaskCategories taskCategory = TaskCategories.Task
+    Closure secureTaskScript = {/* no op*/}
+
 
     //@Autowired (false) WorkflowExecutionContext taskExecutionContext
 
-    ScriptTask () {
+    ScriptTask (String scriptText = null) {
+        if (scriptText)
+            secureTaskScript = internalSetSecureScript (ScriptEvaluator.evaluateSecure(scriptText, this ))
         taskWork = ScriptTask::runTask //link work to correct do work method
     }
-
-    //TaskScript taskScript = new TaskScript ()
-    Closure secureTaskScript = {/* no op*/}
 
 
     private void internalSetSecureScript (Closure script) {

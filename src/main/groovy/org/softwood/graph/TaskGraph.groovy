@@ -2,6 +2,7 @@ package org.softwood.graph
 
 import groovy.transform.EqualsAndHashCode
 import groovy.transform.ToString
+import org.softwood.taskTypes.ScriptTask
 import org.softwood.taskTypes.StartTask
 import org.softwood.taskTypes.TaskCategories
 
@@ -17,8 +18,12 @@ class TaskGraph {
         head
     }
 
-    Vertex addVertex(String label, Class type) {
-        Vertex vertex = new Vertex(label, type)
+    Vertex addVertex(String label, Class type, String scriptText=null) {
+        Vertex vertex
+        if (type == ScriptTask && scriptText)
+            vertex = new Vertex(label, type, scriptText)
+        else
+            vertex = new Vertex(label, type)
         if (!head && type == StartTask)
             head = vertex
         adjVertices.putIfAbsent(vertex, new ArrayList<>())

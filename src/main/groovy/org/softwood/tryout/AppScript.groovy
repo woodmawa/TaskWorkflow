@@ -93,11 +93,20 @@ TaskGraph graph2 = new TaskGraph()
 def start2 = graph2.addVertex("start2", StartTask)
 def start2Alt = graph2.addVertex("start2", StartTask)
 def script2 = graph2.addVertex("script2", ScriptTask)
+script2.scriptText =
+"""
+String out = "hello William "
+            //println "~~> process variables for script task are  $processVariables "
+            //println "~~> change taskVariables from (orig) $taskVariables "
+            taskVariables = [something:"was here"]
+            //println "~~> task script closure running -> " +out + "and taskVariables now $taskVariables"
+            return out
+"""
 
 def par2 = graph2.addVertex("fork2", ParallelGateway)
 
-def leftfork2 = graph2.addVertex("leftFork2", ScriptTask)
-def rightfork2 = graph2.addVertex("rightFork2", ScriptTask)
+def leftfork2 = graph2.addVertex("leftFork2", ScriptTask, "println leftForkSelected")
+def rightfork2 = graph2.addVertex("rightFork2", ScriptTask, "println rightForkSelected")
 
 def join2 = graph2.addVertex("join2", JoinGateway)
 def terminate2 = graph2.addVertex("term2", TerminateTask)

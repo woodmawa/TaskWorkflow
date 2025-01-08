@@ -11,6 +11,7 @@ class Vertex {
     String name
     Class type
     Map<String, Closure> conditionsMap = [:]
+    String scriptText
 
     Vertex () {}
 
@@ -19,6 +20,11 @@ class Vertex {
         this.type = type
     }
 
+    Vertex(String name, Class type, String scriptText) {
+        this.name = name
+        this.type = type
+        this.scriptText = scriptText
+    }
     Vertex(String name, Class type, Map<String, Closure> conditionsMap) {
         this.name = name
         this.type = type

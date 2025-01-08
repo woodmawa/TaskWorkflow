@@ -53,6 +53,8 @@ class TaskTypeLookup {
                     object["$k"] = v
                 }
             }
+            if (vertex.type == ScriptTask && vertex.scriptText)
+                object["secureTaskScript"] =     ScriptEvaluator.evaluateSecure(vertex.scriptText, object as TaskTrait)
             object["taskName"] = vertex.name
             object["taskId"] = UUID.randomUUID() //assign unique task ref
             def vClassType = vertex.type

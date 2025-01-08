@@ -20,11 +20,13 @@ package org.softwood.taskTypes.secureScriptBase
  * If you try to do something potentially dangerous, it will throw a SecurityException.
  *
  */
-class SecureScriptBase {
+abstract class SecureBaseScript extends Script {
+
+    //run method in extending script ...
 
     def delegate
 
-    SecureScriptBase(Closure delegate) {
+    SecureBaseScript(Closure delegate) {
         this.delegate = delegate
     }
 
@@ -70,7 +72,7 @@ class SecureScriptBase {
         if (FORBIDDEN_METHODS.any { forbidden ->
             name.contains(forbidden) || (args?.toString()?.contains(forbidden))
         }) {
-            throw new SecurityException("Forbidden method call detected: $name")
+            throw new SecurityException("Secure Script: Forbidden method call detected: $name")
         }
 
         // Check all string arguments for SQL injection

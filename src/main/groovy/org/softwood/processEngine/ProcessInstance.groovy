@@ -132,7 +132,7 @@ class ProcessInstance {
         if (vertexTaskCache.containsKey (vertex.toString())) {
             task = vertexTaskCache.get(vertex.toString())
         } else {
-            Optional<Task> optionalTask = TaskTypeLookup.getTaskFor(vertex, [taskName: vertex.name])
+            Optional<Task> optionalTask = TaskTypeLookup.getTaskFor(vertex, [taskName: vertex.name, parentProcess:this])
             if (optionalTask.isEmpty()) {
                 log.warn("Task for vertex [${vertex.name}] not found")
                 return
@@ -140,7 +140,6 @@ class ProcessInstance {
 
             task = optionalTask.get()
             task.setInitialValues ( initialValues?: [:])
-            task.parentProcess = this
 
             if (task.taskType == "JoinGateway") {
                 JoinGateway gwTask = task
