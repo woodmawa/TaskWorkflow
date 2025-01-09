@@ -1,5 +1,7 @@
 package org.softwood.taskTypes.secureScriptBase
 
+import groovy.util.logging.Slf4j
+
 /**
  *
  * Security Features:
@@ -21,6 +23,7 @@ package org.softwood.taskTypes.secureScriptBase
  *
  * abstract as it doesnt implement the run ()
  */
+@Slf4j
 abstract class SecureBaseScript extends Script {
 
     //run method in extending script ...
@@ -70,6 +73,8 @@ abstract class SecureBaseScript extends Script {
 
     // Validate method calls against security rules
     private void validateMethodCall(String name, args) {
+        log.info "secureBase : validate string input : $name with args $args"
+
         // Check for forbidden method calls
         if (FORBIDDEN_METHODS.any { forbidden ->
             name.contains(forbidden) || (args?.toString()?.contains(forbidden))
@@ -87,6 +92,7 @@ abstract class SecureBaseScript extends Script {
 
     // Validate string input against injection patterns
     private void validateStringInput(String input) {
+        log.info "secureBase : validate string input : $input"
         // Check for SQL injection attempts
         if (SQL_INJECTION_PATTERNS.any { pattern ->
             input =~ pattern

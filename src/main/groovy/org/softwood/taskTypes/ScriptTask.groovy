@@ -8,20 +8,8 @@ import org.softwood.taskTypes.secureScriptBase.SecureBaseScript
 
 import java.util.concurrent.CompletableFuture
 
-@InheritConstructors
+
 @Slf4j
-class TaskScript extends SecureBaseScript {
-
-    Closure work = {"no-op"}
-
-    //throws SecurityException on validation failure of any user input
-    def run() {
-        log.debug "TaskScript: run the work closure and return result (default is 'done') "
-        def result = work.call()
-        return result
-    }
-}
-
 class SecureScriptEvaluator {
 
     volatile private GroovyShell shell
@@ -42,29 +30,14 @@ class SecureScriptEvaluator {
         shell.setVariable("task",task )
         shell.setVariable("secure", true)
 
-        if ( task.taskName == "RightFork2") {
-            task
-        }
+        log.debug "parsing userScriptText for forbidden actions task $task.taskName : script : [$userScriptText] "
         // Create a closure from the script text
         Script secureScript = shell.parse(userScriptText)
-        //secureScript.work = secureScript.&run
 
      // return the parsed script as a closure
         return secureScript::run
     }
 
-    static Closure cheap(String text) {
-        CompilerConfiguration config = new CompilerConfiguration()
-        def name = TaskScript.class.name
-        config.setScriptBaseClass(DelegatingScript.class.name)
-        GroovyShell shell = new GroovyShell(this.class.classLoader, new Binding(), config)
-        shell.setVariable("context" , "hello william")
-
-        def secureScript = shell.parse(text)
-        //secureScript.work = secureScript.&run
-
-        return secureScript.&run
-    }
 }
 
 @Slf4j
@@ -81,7 +54,7 @@ class ScriptTask implements ExecutableTaskTrait {
     ScriptTask (String scriptText = null) {
         if (scriptText)
             secureTaskScript = internalSetSecureScript (new SecureScriptEvaluator().evaluateSecure(scriptText, this ))
-        taskWork = ScriptTask::runTask //link work to correct do work method
+        taskWork = ScriptTask::runTask
     }
 
 
@@ -99,18 +72,7 @@ class ScriptTask implements ExecutableTaskTrait {
     //returns completeable future
     private def runTask(Map variables=[:]) {
 
-
-        //set the task script closure to do something different from default
-        /*secureTaskScript = {String out = "hello William "
-            println "~~> process variables for script task are  $processVariables "
-            println "~~> change taskVariables from (orig) $taskVariables "
-            taskVariables = [something:"was here"]
-            println "~~> task script closure running -> " +out + "and taskVariables now $taskVariables"
-            return out
-        }*/
-
         taskResult = new CompletableFuture<>()
-        log.info "runtask $taskName with script as '$copyOfScriptText'"
 
         //task result is future of computed outcome or the exception itself
         taskResult.completeAsync {

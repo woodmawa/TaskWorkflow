@@ -51,9 +51,7 @@ class TaskTypeLookup {
                 }
             }
             if (vertex.type == ScriptTask && vertex.scriptText) {
-                //todo - getting wrong script text ...
-                log.info "task $vertex.name, setting scriptText as $vertex.scriptText"
-                object["secureTaskScript"] = new SecureScriptEvaluator().parse(vertex.scriptText, object as TaskTrait)
+               object["secureTaskScript"] = new SecureScriptEvaluator().parse(vertex.scriptText, object as TaskTrait)
                 object["copyOfScriptText"] = vertex.scriptText
             }
             object["taskName"] = vertex.name
