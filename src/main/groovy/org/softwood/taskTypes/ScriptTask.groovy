@@ -40,6 +40,19 @@ class ScriptEvaluator {
      // Execute the secure script
         return secureScript::run
     }
+
+    static Closure cheap(String text) {
+        CompilerConfiguration config = new CompilerConfiguration()
+        def name = TaskScript.class.name
+        config.setScriptBaseClass(DelegatingScript.class.name)
+        GroovyShell shell = new GroovyShell(this.class.classLoader, new Binding(), config)
+        shell.setVariable("context" , "hello william")
+
+        def secureScript = shell.parse(text)
+        //secureScript.work = secureScript.&run
+
+        return secureScript.&run
+    }
 }
 
 @Slf4j
