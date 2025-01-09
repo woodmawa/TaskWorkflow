@@ -3,6 +3,7 @@ package org.softwood.taskTypes
 import groovy.transform.InheritConstructors
 import groovy.transform.ToString
 import groovy.util.logging.Slf4j
+import org.codehaus.groovy.control.CompilationFailedException
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.softwood.taskTypes.secureScriptBase.SecureBaseScript
 
@@ -32,7 +33,13 @@ class SecureScriptEvaluator {
 
         log.debug "parsing userScriptText for forbidden actions task $task.taskName : script : [$userScriptText] "
         // Create a closure from the script text
-        Script secureScript = shell.parse(userScriptText)
+        Script secureScript
+        try { secureScript = shell.parse(userScriptText)
+
+        }
+        catch (CompilationFailedException ce) {
+            log.error "ScriptText is invalid: ${ce.message}"
+        }
 
      // return the parsed script as a closure
         return secureScript::run
