@@ -1,7 +1,6 @@
 package org.softwood.tryout.tryOutTrait
 
 import org.codehaus.groovy.control.CompilerConfiguration
-import org.softwood.taskTypes.ScriptEvaluator
 
 CompilerConfiguration config = new CompilerConfiguration()
 //config.setScriptBaseClass(DelegatingScript.class.name)
@@ -17,15 +16,20 @@ def val = getBinding().getVariable("context")
 println "hello " + val  ; true""")
 res
 
+println "\t--- safeShell --- "
 SafeGroovyShell safeShell = new SafeGroovyShell()
 String userScript = """
 def val = getBinding().getVariable("context")
-println "hello from parsed script cheap with context -> " + val 
+println "userScript parsed, using shell.parse with context set as -> " + val 
 """
 
-Closure parsedScript  = safeShell.parse (userScript).&run
+Closure scriptAsClosure  = safeShell.parse (userScript)
 
 
-parsedScript()
 
-shell.evaluate("System.exit(0)")
+scriptAsClosure()
+
+scriptAsClosure = safeShell.parse("System.exit(0)")
+scriptAsClosure()
+
+println "exit script "

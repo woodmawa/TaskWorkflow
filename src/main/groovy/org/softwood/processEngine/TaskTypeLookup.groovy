@@ -1,13 +1,10 @@
 package org.softwood.processEngine
 
 import groovy.util.logging.Slf4j
-import org.codehaus.groovy.runtime.InvokerHelper
 import org.softwood.graph.*
 import org.softwood.taskTypes.*
 import org.softwood.gatewayTypes.*
 import org.springframework.stereotype.Component
-
-import javax.naming.Name
 
 @Component ("taskTypeLookup")
 @Slf4j
@@ -53,8 +50,12 @@ class TaskTypeLookup {
                     object["$k"] = v
                 }
             }
-            if (vertex.type == ScriptTask && vertex.scriptText)
-                object["secureTaskScript"] =     ScriptEvaluator.evaluateSecure(vertex.scriptText, object as TaskTrait)
+            if (vertex.type == ScriptTask && vertex.scriptText) {
+                //todo - getting wrong script text ...
+                log.info "task $vertex.name, setting scriptText as $vertex.scriptText"
+                object["secureTaskScript"] = new SecureScriptEvaluator().parse(vertex.scriptText, object as TaskTrait)
+                object["copyOfScriptText"] = vertex.scriptText
+            }
             object["taskName"] = vertex.name
             object["taskId"] = UUID.randomUUID() //assign unique task ref
             def vClassType = vertex.type

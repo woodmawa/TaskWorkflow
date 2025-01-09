@@ -93,20 +93,20 @@ TaskGraph graph2 = new TaskGraph()
 def start2 = graph2.addVertex("start2", StartTask)
 def start2Alt = graph2.addVertex("start2", StartTask)
 def script2 = graph2.addVertex("script2", ScriptTask)
-script2.scriptText =
-"""
-String out = "hello William "
-            //println "~~> process variables for script task are  $processVariables "
-            //println "~~> change taskVariables from (orig) $taskVariables "
-            taskVariables = [something:"was here"]
-            //println "~~> task script closure running -> " +out + "and taskVariables now $taskVariables"
-            return out
+script2.scriptText = """
+//default closure script 
+String outText = "hello William "
+Boolean secure = this.getBinding().getProperty ("secure")
+println "secure script is > " + secure
+askVariables = [something:"was here"]
+println "~~> task script closure running generated -> " +outText 
+return  outText
 """
 
 def par2 = graph2.addVertex("fork2", ParallelGateway)
 
-def leftfork2 = graph2.addVertex("leftFork2", ScriptTask, "println leftForkSelected")
-def rightfork2 = graph2.addVertex("rightFork2", ScriptTask, "println rightForkSelected")
+def leftFork2 = graph2.addVertex("leftFork2", ScriptTask, "println '\t**> leftFork2: leftForkSelected'")
+def rightFork2 = graph2.addVertex("rightFork2", ScriptTask, "println '\t**> rightFork2: rightForkSelected'")
 
 def join2 = graph2.addVertex("join2", JoinGateway)
 def terminate2 = graph2.addVertex("term2", TerminateTask)
@@ -114,10 +114,10 @@ def terminate2 = graph2.addVertex("term2", TerminateTask)
 
 graph2.addEdge(start2, script2)
 graph2.addEdge(script2, par2)
-graph2.addEdge(par2, leftfork2)
-graph2.addEdge(par2, rightfork2)
-graph2.addEdge(leftfork2, join2)
-graph2.addEdge(rightfork2, join2)
+graph2.addEdge(par2, leftFork2)
+graph2.addEdge(par2, rightFork2)
+graph2.addEdge(leftFork2, join2)
+graph2.addEdge(rightFork2, join2)
 graph2.addEdge(join2, terminate2)
 
 /*@Lookup ("processTemplateInstance")
@@ -151,6 +151,8 @@ Optional<ProcessTemplate> latestGw = library.latest ("gatewayProcess")
 ProcessTemplate template2 = latestGw.get()
 
 //ProcessInstance pi = template.startProcess([var: 'will'])
+
+
 ProcessInstance pi = template2.startProcess([var: 'will'])
 
 println "process completed in : ${pi.executionDuration()}"

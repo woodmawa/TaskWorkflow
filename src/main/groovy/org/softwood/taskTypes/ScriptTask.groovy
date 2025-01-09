@@ -22,22 +22,34 @@ class TaskScript extends SecureBaseScript {
     }
 }
 
-class ScriptEvaluator {
+class SecureScriptEvaluator {
 
-    static Closure evaluateSecure (String scriptText, TaskTrait task ) {
+    volatile private GroovyShell shell
+
+    SecureScriptEvaluator () {
         CompilerConfiguration config = new CompilerConfiguration()
-        config.setScriptBaseClass(TaskScript.getClass().name)
-        GroovyShell shell = new GroovyShell(new Binding(), config)
+        //set the secure base script which does the validations
+        config.setScriptBaseClass(SecureBaseScript.class.name)
+        shell = new GroovyShell(this.class.classLoader, new Binding(), config)
+    }
+
+
+
+    Closure parse (String userScriptText, TaskTrait task ) {
 
         shell.setVariable("processVariables", task.parentProcess.processVariables )
         shell.setVariable("taskVariables",task.taskVariables )
         shell.setVariable("task",task )
+        shell.setVariable("secure", true)
 
+        if ( task.taskName == "RightFork2") {
+            task
+        }
         // Create a closure from the script text
-        TaskScript secureScript = shell.parse(scriptText)
-        secureScript.work = secureScript.&run
+        Script secureScript = shell.parse(userScriptText)
+        //secureScript.work = secureScript.&run
 
-     // Execute the secure script
+     // return the parsed script as a closure
         return secureScript::run
     }
 
@@ -62,12 +74,13 @@ class ScriptTask implements ExecutableTaskTrait {
     TaskCategories taskCategory = TaskCategories.Task
     Closure secureTaskScript = {/* no op*/}
 
+    String copyOfScriptText
 
     //@Autowired (false) WorkflowExecutionContext taskExecutionContext
 
     ScriptTask (String scriptText = null) {
         if (scriptText)
-            secureTaskScript = internalSetSecureScript (ScriptEvaluator.evaluateSecure(scriptText, this ))
+            secureTaskScript = internalSetSecureScript (new SecureScriptEvaluator().evaluateSecure(scriptText, this ))
         taskWork = ScriptTask::runTask //link work to correct do work method
     }
 
@@ -80,7 +93,7 @@ class ScriptTask implements ExecutableTaskTrait {
     void setScript (String scriptText) {
         def task = this
         if (scriptText)
-            secureTaskScript = internalSetSecureScript (ScriptEvaluator.evaluateSecure(scriptText, task ))
+            secureTaskScript = internalSetSecureScript (new SecureScriptEvaluator().evaluateSecure(scriptText, task ))
     }
 
     //returns completeable future
@@ -88,15 +101,16 @@ class ScriptTask implements ExecutableTaskTrait {
 
 
         //set the task script closure to do something different from default
-        secureTaskScript = {String out = "hello William "
+        /*secureTaskScript = {String out = "hello William "
             println "~~> process variables for script task are  $processVariables "
             println "~~> change taskVariables from (orig) $taskVariables "
             taskVariables = [something:"was here"]
             println "~~> task script closure running -> " +out + "and taskVariables now $taskVariables"
             return out
-        }
+        }*/
 
         taskResult = new CompletableFuture<>()
+        log.info "runtask $taskName with script as '$copyOfScriptText'"
 
         //task result is future of computed outcome or the exception itself
         taskResult.completeAsync {

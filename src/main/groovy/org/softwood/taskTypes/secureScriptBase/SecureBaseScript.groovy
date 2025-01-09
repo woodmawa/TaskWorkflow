@@ -19,6 +19,7 @@ package org.softwood.taskTypes.secureScriptBase
  *
  * If you try to do something potentially dangerous, it will throw a SecurityException.
  *
+ * abstract as it doesnt implement the run ()
  */
 abstract class SecureBaseScript extends Script {
 
@@ -26,7 +27,8 @@ abstract class SecureBaseScript extends Script {
 
     def delegate
 
-    SecureBaseScript(Closure delegate) {
+    SecureBaseScript(Closure delegate=null) {
+        super()
         this.delegate = delegate
     }
 
