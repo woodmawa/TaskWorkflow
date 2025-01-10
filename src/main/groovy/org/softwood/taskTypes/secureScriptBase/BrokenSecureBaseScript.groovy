@@ -24,13 +24,13 @@ import groovy.util.logging.Slf4j
  * abstract as it doesnt implement the run ()
  */
 @Slf4j
-abstract class SecureBaseScript extends Script {
+abstract class BrokenSecureBaseScript extends Script implements GroovyInterceptable {
 
     //run method in extending script ...
 
     def delegate
 
-    SecureBaseScript(Closure delegate=null) {
+    BrokenSecureBaseScript(Closure delegate=null) {
         super()
         this.delegate = delegate
     }
@@ -60,25 +60,40 @@ abstract class SecureBaseScript extends Script {
             /<img[^>]+src[^>]+>/
     ]
 
+
+    def invokeMethod(String name, args) {
+        log.info "method $name with ($args) invoked in script "
+        MetaMethod check = metaClass.getMetaMethod("checkMethod", name, args)
+        check.invoke (this, name, args)
+    }
+
     // Override methodMissing to catch and validate method calls
-    def methodMissing(String name, args) {
-        validateMethodCall(name, args)
+    def checkMethod(String name, args) {
+        def metaMethod = BrokenSecureBaseScript.metaClass.getMetaMethod("validateMethodCall", name, args)
+
+
+        metaMethod.invoke (this, name, args)
         // If validation passes, proceed with the method call
-        def metaMethod = this.metaClass.getMetaMethod(name, args)
-        if (metaMethod) {
-            return metaMethod.invoke(this, args)
+        def relayMetaMethod = this.metaClass.getMetaMethod(name, args)
+        if (relayMetaMethod) {
+            return relayMetaMethod.invoke(this, args)
         }
+        log.info "method in script [$name] is not a valid meta method that can be called "
         throw new MissingMethodException(name, this.class, args)
     }
 
     // Validate method calls against security rules
     private void validateMethodCall(String name, args) {
-        log.info "secureBase : validate string input : $name with args $args"
+        log.info "secureBase : validate method call : validate method  : $name with args $args"
 
         // Check for forbidden method calls
         if (FORBIDDEN_METHODS.any { forbidden ->
-            name.contains(forbidden) || (args?.toString()?.contains(forbidden))
+            Boolean notAllowed = name.contains(forbidden) || (args?.toString()?.contains(forbidden))
+            if (notAllowed) {
+                log.info "not allowed to call [$forbidden] in script "
+            }
         }) {
+            log.info "secureBase : validate string input : $name with args $args, failed as contained FORBIDDEN_methods"
             throw new SecurityException("Secure Script: Forbidden method call detected: $name")
         }
 
@@ -97,6 +112,8 @@ abstract class SecureBaseScript extends Script {
         if (SQL_INJECTION_PATTERNS.any { pattern ->
             input =~ pattern
         }) {
+            log.info "secureBase : validate string input : [$input] , failed as contained FORBIDDEN_methods"
+
             throw new SecurityException("Potential SQL injection detected in input: ${input.take(50)}...")
         }
 
@@ -104,6 +121,8 @@ abstract class SecureBaseScript extends Script {
         if (XSS_PATTERNS.any { pattern ->
             input =~ pattern
         }) {
+            log.info "secureBase : validate string input : [$input], failed as contained XSS patterns"
+
             throw new SecurityException("Potential XSS attack detected in input: ${input.take(50)}...")
         }
     }
@@ -111,12 +130,14 @@ abstract class SecureBaseScript extends Script {
     // Override property access
     def propertyMissing(String name) {
         validatePropertyAccess(name)
+        log.info "property $name wasnt found, throwing exception"
         throw new MissingPropertyException(name, this.class)
     }
 
     // Validate property access against security rules
     private void validatePropertyAccess(String name) {
         if (FORBIDDEN_METHODS.any { forbidden -> name.contains(forbidden) }) {
+            log.info "secureBase : validate property access  : $name, failed as contains forbidden methods "
             throw new SecurityException("Access to forbidden property detected: $name")
         }
     }

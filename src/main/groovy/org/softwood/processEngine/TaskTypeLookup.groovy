@@ -51,7 +51,8 @@ class TaskTypeLookup {
                 }
             }
             if (vertex.type == ScriptTask && vertex.scriptText) {
-               object["secureTaskScript"] = new SecureScriptEvaluator().parse(vertex.scriptText, object as TaskTrait)
+                def script = new SecureScriptEvaluator().parse(vertex.scriptText, object as TaskTrait)
+                object["secureTaskScript"] = script
                 object["copyOfScriptText"] = vertex.scriptText
             }
             object["taskName"] = vertex.name

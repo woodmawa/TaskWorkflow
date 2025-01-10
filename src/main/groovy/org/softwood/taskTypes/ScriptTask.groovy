@@ -1,11 +1,11 @@
 package org.softwood.taskTypes
 
-import groovy.transform.InheritConstructors
+
 import groovy.transform.ToString
 import groovy.util.logging.Slf4j
 import org.codehaus.groovy.control.CompilationFailedException
 import org.codehaus.groovy.control.CompilerConfiguration
-import org.softwood.taskTypes.secureScriptBase.SecureBaseScript
+import org.softwood.taskTypes.secureScriptBase.ValidationDelegate
 
 import java.util.concurrent.CompletableFuture
 
@@ -15,10 +15,28 @@ class SecureScriptEvaluator {
 
     volatile private GroovyShell shell
 
+    private Set<String> forbiddenMethods = [
+            'System.exit',
+            'Runtime.exec',
+            'ProcessBuilder',
+            'System.getRuntime',
+            'SecurityManager',
+            'ClassLoader',
+            'URLClassLoader'
+    ] as Set
+
+    private Set<String> forbiddenProperties = [
+            'config'
+
+    ] as Set
+
+    private ValidationDelegate delegate = new ValidationDelegate(forbiddenMethods, forbiddenProperties)
+
     SecureScriptEvaluator () {
         CompilerConfiguration config = new CompilerConfiguration()
         //set the secure base script which does the validations
-        config.setScriptBaseClass(SecureBaseScript.class.name)
+        //config.setScriptBaseClass(SecureBaseScript.class.name)
+        config.setScriptBaseClass(DelegatingScript.class.name)
         shell = new GroovyShell(this.class.classLoader, new Binding(), config)
     }
 
@@ -33,9 +51,11 @@ class SecureScriptEvaluator {
 
         log.debug "parsing userScriptText for forbidden actions task $task.taskName : script : [$userScriptText] "
         // Create a closure from the script text
-        Script secureScript
-        try { secureScript = shell.parse(userScriptText)
-
+        DelegatingScript secureScript
+        try {
+            secureScript = (DelegatingScript) shell.parse(userScriptText)
+            secureScript.setDelegate (delegate)
+            secureScript
         }
         catch (CompilationFailedException ce) {
             log.error "ScriptText is invalid: ${ce.message}"
@@ -55,12 +75,11 @@ class ScriptTask implements ExecutableTaskTrait {
     Closure secureTaskScript = {/* no op*/}
 
     String copyOfScriptText
+    RuntimeException scriptException
 
     //@Autowired (false) WorkflowExecutionContext taskExecutionContext
 
     ScriptTask (String scriptText = null) {
-        if (scriptText)
-            secureTaskScript = internalSetSecureScript (new SecureScriptEvaluator().evaluateSecure(scriptText, this ))
         taskWork = ScriptTask::runTask
     }
 
@@ -73,7 +92,7 @@ class ScriptTask implements ExecutableTaskTrait {
     void setScript (String scriptText) {
         def task = this
         if (scriptText)
-            secureTaskScript = internalSetSecureScript (new SecureScriptEvaluator().evaluateSecure(scriptText, task ))
+            secureTaskScript = internalSetSecureScript (new SecureScriptEvaluator().parse(scriptText, task ))
     }
 
     //returns completeable future
@@ -87,7 +106,10 @@ class ScriptTask implements ExecutableTaskTrait {
                 log.debug "Script's runTask:  running taskScript and get its Future result "
                 secureTaskScript.call()        //call the secure task script closure ...
             } catch (Exception ex) {
-                ex
+                log.info "script task $taskName threw exception  : " + ex.stackTrace
+                this.status = TaskStatus.EXCEPTION
+                scriptException = ex
+                return ex
             }
         }
 
