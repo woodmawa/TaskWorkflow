@@ -5,6 +5,8 @@ import groovy.transform.ToString
 import groovy.util.logging.Slf4j
 import org.codehaus.groovy.control.CompilationFailedException
 import org.codehaus.groovy.control.CompilerConfiguration
+import org.codehaus.groovy.control.MultipleCompilationErrorsException
+import org.codehaus.groovy.control.customizers.SecureASTCustomizer
 import org.softwood.taskTypes.secureScriptBase.ValidationDelegate
 
 import java.util.concurrent.CompletableFuture
@@ -37,6 +39,42 @@ class SecureScriptEvaluator {
         //set the secure base script which does the validations
         //config.setScriptBaseClass(SecureBaseScript.class.name)
         config.setScriptBaseClass(DelegatingScript.class.name)
+
+        // Add secure imports to prevent access to System class
+        config.addCompilationCustomizers(new SecureASTCustomizer().tap {
+            // Explicitly define allowed classes/packages
+            importsWhitelist = [
+                    'java.lang.Math',
+                    'java.lang.String',
+                    'java.util.List',
+                    'java.util.Map'
+                    // Add other safe classes you want to allow
+            ]
+
+            // Explicitly deny dangerous classes
+            importsBlacklist = [
+                    'java.lang.System',
+                    'java.lang.Runtime',
+                    'groovy.lang.GroovyShell',
+                    'java.io.File'
+                    // Add other classes you want to block
+            ]
+
+            // Optionally disable specific statements cant fnd token
+            /*tokensBlacklist = [
+                    Token.PACKAGE,
+                    Token.CLASS_DEF
+                    // Add other tokens you want to block
+            ]*/
+
+            // Prevent static method calls if needed
+            //staticImportsWhitelist = []
+            staticImportsBlacklist = ['java.lang.System']
+
+            // Disallow star imports
+            starImportsWhitelist = []
+            starImportsBlacklist = ['java.lang.*', 'java.io.*']
+        })
         shell = new GroovyShell(this.class.classLoader, new Binding(), config)
     }
 
@@ -105,7 +143,7 @@ class ScriptTask implements ExecutableTaskTrait {
             try {
                 log.debug "Script's runTask:  running taskScript and get its Future result "
                 secureTaskScript.call()        //call the secure task script closure ...
-            } catch (Exception ex) {
+            } catch (SecurityException | MultipleCompilationErrorsException | Exception ex) {
                 log.info "script task $taskName threw exception  : " + ex.stackTrace
                 this.status = TaskStatus.EXCEPTION
                 scriptException = ex

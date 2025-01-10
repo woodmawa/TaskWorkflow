@@ -95,15 +95,8 @@ def start2Alt = graph2.addVertex("start2", StartTask)
 def script2 = graph2.addVertex("script2", ScriptTask)
 script2.scriptText = """
 //default closure script 
-doThing()  //non existent method
-//System.exit(1)
-ClassLoader
-String outText = "hello William "
-Boolean secure = this.getBinding().getProperty ("secure")
-assert secure
-askVariables = [something:"was here"]
-println "~~> task script closure running generated -> " +outText 
-return  outText
+System.exit(1)
+
 """
 
 def par2 = graph2.addVertex("fork2", ParallelGateway)
