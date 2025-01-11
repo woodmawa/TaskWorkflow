@@ -4,6 +4,7 @@ import groovy.util.logging.Slf4j
 import org.softwood.graph.*
 import org.softwood.taskTypes.*
 import org.softwood.gatewayTypes.*
+import org.softwood.taskTypes.secureScriptBase.SecureScriptEvaluator
 import org.springframework.stereotype.Component
 
 @Component ("taskTypeLookup")

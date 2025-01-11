@@ -1,12 +1,8 @@
 package org.softwood.graph
 
-import groovy.transform.EqualsAndHashCode
-import groovy.transform.ToString
+
 import org.softwood.taskTypes.ScriptTask
 import org.softwood.taskTypes.StartTask
-import org.softwood.taskTypes.TaskCategories
-
-import java.util.function.Predicate
 
 class TaskGraph {
     private Map<Vertex, List<Vertex>> adjVertices = [:]

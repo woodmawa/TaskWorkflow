@@ -13,16 +13,8 @@ import org.softwood.processLibrary.ProcessTemplateLibrary
 import org.softwood.taskTypes.EndTask
 import org.softwood.taskTypes.ScriptTask
 import org.softwood.taskTypes.StartTask
-import org.softwood.taskTypes.Task
-import org.softwood.basics.WorkflowExecutionContext
-import org.softwood.basics.WorkflowExecutionContextImpl
-
 import org.softwood.graph.TaskGraph
-import org.softwood.processLibrary.StandardProcessTemplateInstance
 import org.softwood.taskTypes.TerminateTask
-
-import java.util.concurrent.CompletableFuture
-
 
 var ctx = SpringContextUtils::initialise(activeProfile='dev', ["org.softwood.processEngine", "org.softwood.processLibrary", "org.softwood.processBeanConfiguration"])
 
@@ -95,7 +87,11 @@ def start2Alt = graph2.addVertex("start2", StartTask)
 def script2 = graph2.addVertex("script2", ScriptTask)
 script2.scriptText = """
 //default closure script 
-System.exit(1)
+
+println "script2 : basic hello "
+
+def ans = tryThisOut()
+//System.exit(1)
 
 """
 
