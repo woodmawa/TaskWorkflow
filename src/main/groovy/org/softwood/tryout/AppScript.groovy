@@ -88,10 +88,11 @@ def script2 = graph2.addVertex("script2", ScriptTask)
 script2.scriptText = """
 //default closure script 
 
-println "script2 : basic hello "
+//println "script2 : basic hello "
 
-def ans = tryThisOut()
-//System.exit(1)
+//def ans = tryThisOut()
+//def s = System 
+System.exit(1)
 
 """
 
