@@ -21,6 +21,11 @@ class UserTask implements ExecutableTaskTrait {
         CANCELLED
     }
 
+    //needs more thought - hydrate/dehydrate etc etc
+    def delayedStartTime
+    def expectedTaskDuration
+
+
 
     //@Autowired (false) WorkflowExecutionContext taskExecutionContext
 
