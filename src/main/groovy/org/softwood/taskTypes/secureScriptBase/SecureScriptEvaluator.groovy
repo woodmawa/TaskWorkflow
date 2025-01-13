@@ -125,6 +125,7 @@ class SecureScriptEvaluator {
                     // Add other safe classes you want to allow
             ]
 
+
             //block these as receivers
             disallowedReceiversClasses = [
                     Object,
