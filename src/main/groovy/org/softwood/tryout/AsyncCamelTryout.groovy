@@ -5,8 +5,13 @@ import org.apache.camel.CamelContext
 import org.apache.camel.Exchange
 import org.softwood.taskTypes.CamelFlowTask
 import org.softwood.taskTypes.CircuitBreakerConfig
+import org.softwood.taskTypes.ExecutableTaskTrait
 import org.softwood.taskTypes.RouteConfig
 import org.slf4j.LoggerFactory
+
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.TimeoutException
+import java.util.function.Function
 
 def log = LoggerFactory.getLogger(this.class)
 
@@ -16,7 +21,7 @@ def beanFactories = context.getBeanFactory()
 def camelContext = SpringContextUtils.getBean ('camelConfig')
 
 // Example usage:
-def task = new CamelFlowTask()
+ExecutableTaskTrait task = new CamelFlowTask()
 
 
 def routeConfig = RouteConfig.builder()
@@ -28,6 +33,7 @@ def routeConfig = RouteConfig.builder()
                 CircuitBreakerConfig.builder()
                         .failureThreshold(3)
                         .resetTimeout(5000)
+                        .halfOpenAttempts(3)
                         .fallback { Exchange exchange ->
                             exchange.message.body = "Fallback Response: couldnt make route work"
                         }
@@ -39,16 +45,16 @@ def routeConfig = RouteConfig.builder()
         .build()
 
 task.addRoute(routeConfig) { Exchange exchange ->
+    Function tx = { it.toString().toUpperCase() }
     from("direct:start")
-            .transform().body { it.toString().toUpperCase() }
+            .transform().body (tx)
             .to("direct:end")
 }
 
-def result = task.runTask().thenApply { results ->
-    println ("Route results: $results")
-    return results
-}.exceptionally { throwable ->
-    println ("Error occurred", throwable)
-    return null
+def result = task.execute()
+try {
+    def ans = result.get(5, TimeUnit.SECONDS)
+    log.info "read '$ans' from the camel task future  "
+} catch (TimeoutException to) {
+    log.info "result of camel task future timed out "
 }
-

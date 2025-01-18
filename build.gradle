@@ -32,6 +32,9 @@ dependencies {
     implementation group: 'org.apache.groovy', name: 'groovy-json'
 
     implementation group: 'org.apache.camel.springboot', name: 'camel-spring-boot-starter', version: '4.9.0'
+    implementation group: 'org.apache.camel', name: 'camel-resilience4j', version: '4.9.0'
+    implementation group: 'org.apache.camel', name: 'camel-microprofile-fault-tolerance', version: '4.9.0'
+
 
     developmentOnly 'org.springframework.boot:spring-boot-devtools'  //hot reloads
     testImplementation 'org.springframework.boot:spring-boot-starter-test'

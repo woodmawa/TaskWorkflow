@@ -23,7 +23,7 @@ import java.util.concurrent.CompletableFuture
 
 @Slf4j
 @ToString (includeNames=true, includes = ["taskName", "taskType", "taskCategory", "status", "startTime", "endTime"])
-class CamelFlowTask implements TaskTrait {
+class CamelFlowTask implements ExecutableTaskTrait {
     String taskType = this.class.getSimpleName()
     TaskCategories taskCategory = TaskCategories.Task
     private CamelContext camelContext
@@ -44,13 +44,9 @@ class CamelFlowTask implements TaskTrait {
         camelContext.setLoadTypeConverters(true)
     }
 
-    CompletableFuture runTask () {
-        camelContext = new DefaultCamelContext()
-        taskWork()
-    }
 
     private CompletableFuture startCamelFlow (Map variables = [:]) {
-        return CompletableFuture.supplyAsync {
+        CompletableFuture result =  CompletableFuture.supplyAsync {
             try {
                 camelContext.start()
 
@@ -72,7 +68,7 @@ class CamelFlowTask implements TaskTrait {
                 shutdownCamelContext()
             }
         }
-
+        return result
     }
 
     def addRoute(RouteConfig config, @DelegatesTo(RouteBuilder) Closure closure) {

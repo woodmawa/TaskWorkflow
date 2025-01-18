@@ -17,7 +17,8 @@ trait ExecutableTaskTrait<R> extends TaskTrait {
             setupTask(TaskStatus.RUNNING)
             log.info "TaskTrait: task resource processor , task: $taskName, action.doCall ($this, $inputVariables)"
             def result = action?.call (this, inputVariables)
-            return closeOutTask (TaskStatus.COMPLETED)
+            closeOutTask (TaskStatus.COMPLETED)
+            return result
         } catch (Exception exception) {
             log.info "TaskTrait: task resource, action.doCall threw exception $exception with delegate set as $action.delegate"
             return closeOutTask(TaskStatus.EXCEPTION)

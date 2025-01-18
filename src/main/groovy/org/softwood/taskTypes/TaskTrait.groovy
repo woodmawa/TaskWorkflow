@@ -114,7 +114,7 @@ trait TaskTrait  implements  Task  {
 
     void addToProcessRunTasks () {
         def process = this.parentProcess
-        process.addTaskToProcessRunTasks (this)
+        process?.addTaskToProcessRunTasks (this)
     }
 
     void setRequiredPredecessors (Task task) {
