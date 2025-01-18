@@ -53,6 +53,8 @@ class CamelFlowTask implements ExecutableTaskTrait {
 
         ProducerTemplate template = camelContext.createProducerTemplate()
 
+
+
         def results = [:]
         def num = resultFutures.size()
         resultFutures.each { routeId, future ->
@@ -61,10 +63,12 @@ class CamelFlowTask implements ExecutableTaskTrait {
                     //invoke the route
                     log.info "send body message to route $routeId"
                     template.sendBody("direct:start", "This is a test message")
+
                 } catch (Exception e) {
                     log.error("Error executing route: ${routeId}", e)
                     future.completeExceptionally(e)
                 } finally {
+                    log.info "shutting down camel context "
                     shutdownCamelContext()
                 }
             }

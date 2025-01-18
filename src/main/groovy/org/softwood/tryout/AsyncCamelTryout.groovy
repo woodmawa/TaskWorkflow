@@ -46,6 +46,27 @@ def routeConfig = RouteConfig.builder().with {
         build()
     }
 
+def routeConfig2 = RouteConfig.builder().with {
+    routeId("test-route2")
+    fromEndpoint("direct:end")
+    resultEndpoint("direct:start")
+    retryAttempts(3)
+    circuitBreaker(
+            CircuitBreakerConfig.builder().with {
+                failureThreshold(3)
+                resetTimeout(5000)
+                halfOpenAttempts(3)
+                fallback { Exchange exchange ->
+                    exchange.message.body = "Fallback Response: couldn't make route work"
+                }
+                build()
+            }  )
+    errorHandler { Exchange exchange ->
+        log.error ("Error in route: ${exchange.getProperty(Exchange.EXCEPTION_CAUGHT)}")
+    }
+    build()
+}
+
 task.addRoute(routeConfig) { Exchange exchange ->
     Function tx = {log.info "got body $it from exchange"
         it.toString().toUpperCase()
@@ -54,6 +75,15 @@ task.addRoute(routeConfig) { Exchange exchange ->
             .log("simple start-end route started ")
             .transform().body (tx)
             .to("direct:end")
+}
+
+task.addRoute(routeConfig2) { Exchange exchange ->
+    from("direct:end")
+            .process {
+                def received = it.getMessage()
+                log.info "received $received"
+            }
+
 }
 
 def result = task.execute()
