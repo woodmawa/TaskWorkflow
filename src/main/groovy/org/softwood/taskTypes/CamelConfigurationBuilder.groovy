@@ -124,77 +124,9 @@ class DynamicRouteManager {
             } //end of configure method
         })//end new route builder
 
-     } //end add route
-
-    /*
-    void addRoute(RouteConfig config, Closure routeDefinition) {
-        camelContext.addRoutes(new RouteBuilder() {
-            @Override
-            void configure() {
-                // Configure error handling if specified
-                if (config.errorHandler) {
-                    errorHandler(deadLetterChannel("direct:${config.routeId}-error")
-                            .maximumRedeliveries(config.retryAttempts)
-                            .redeliveryDelay(config.retryDelay)
-                            .logExhaustedMessageHistory(true)
-                            .asyncDelayedRedelivery())
-
-                    from("direct:${config.routeId}-error")
-                            .process(new Processor() {
-                                @Override
-                                void process(Exchange exchange) {
-                                    config.errorHandler.call(exchange)
-                                }
-                            })
-                }
-
-                // Start route definition
-                RouteDefinition route = from(config.fromEndpoint)
-                        .routeId(config.routeId)
+     } //end add route method
 
 
-                // Add circuit breaker if configured
-                if (config.circuitBreaker) {
-                    route.circuitBreaker()
-                            .resilience4jConfiguration()
-                            .failureRateThreshold(config.circuitBreaker.failureThreshold)
-                            .waitDurationInOpenState(config.circuitBreaker.resetTimeout)
-                            .permittedNumberOfCallsInHalfOpenState(config.circuitBreaker.halfOpenAttempts)
-                            .end()
-                            .onFallback()
-                                .transform().constant("Fallback response")  // Replace with your fallback logic
-                            .end()  // End the onFallback block
-                            .transform().body({ it ->
-                                // Your main processing logic here
-                                return it
-                            } as java.util.function.Function)
-                            .end()
-
-                    //apply the route definition inside the cct breaker
-                    // Apply route definition
-                    routeDefinition.delegate = this
-                    routeDefinition.resolveStrategy = Closure.DELEGATE_FIRST
-                    routeDefinition.call()
-
-
-                }  else {
-                    // Apply route definition without circuit breaker
-                    routeDefinition.delegate = this
-                    routeDefinition.resolveStrategy = Closure.DELEGATE_FIRST
-                    routeDefinition.call()
-                }
-
-                route.end()  //route end
-
-                // Add completion handling
-                route.to(config.resultEndpoint)
-                .process {Exchange exchange -> if (config.onComplete) config.onComplete.call(exchange)}
-
-                activeRoutes[config.routeId] = route
-            }
-        })
-    }
-*/
     void removeRoute(String routeId) {
         try {
             camelContext.stopRoute(routeId)

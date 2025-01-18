@@ -3,6 +3,7 @@ package org.softwood.tryout
 import groovy.util.logging.Slf4j
 import org.apache.camel.CamelContext
 import org.apache.camel.Exchange
+import org.apache.camel.ProducerTemplate
 import org.softwood.taskTypes.CamelFlowTask
 import org.softwood.taskTypes.CircuitBreakerConfig
 import org.softwood.taskTypes.ExecutableTaskTrait
@@ -24,34 +25,40 @@ def camelContext = SpringContextUtils.getBean ('camelConfig')
 ExecutableTaskTrait task = new CamelFlowTask()
 
 
-def routeConfig = RouteConfig.builder()
-        .routeId("test-route")
-        .fromEndpoint("direct:start")
-        .resultEndpoint("direct:end")
-        .retryAttempts(3)
-        .circuitBreaker(
-                CircuitBreakerConfig.builder()
-                        .failureThreshold(3)
-                        .resetTimeout(5000)
-                        .halfOpenAttempts(3)
-                        .fallback { Exchange exchange ->
-                            exchange.message.body = "Fallback Response: couldnt make route work"
+def routeConfig = RouteConfig.builder().with {
+        routeId("test-route")
+        fromEndpoint("direct:start")
+        resultEndpoint("direct:end")
+        retryAttempts(3)
+        circuitBreaker(
+                CircuitBreakerConfig.builder().with {
+                        failureThreshold(3)
+                        resetTimeout(5000)
+                        halfOpenAttempts(3)
+                        fallback { Exchange exchange ->
+                            exchange.message.body = "Fallback Response: couldn't make route work"
                         }
-                        .build()
-        )
-        .errorHandler { Exchange exchange ->
+                        build()
+                }  )
+        errorHandler { Exchange exchange ->
             log.error ("Error in route: ${exchange.getProperty(Exchange.EXCEPTION_CAUGHT)}")
         }
-        .build()
+        build()
+    }
 
 task.addRoute(routeConfig) { Exchange exchange ->
-    Function tx = { it.toString().toUpperCase() }
+    Function tx = {log.info "got body $it from exchange"
+        it.toString().toUpperCase()
+    }
     from("direct:start")
+            .log("simple start-end route started ")
             .transform().body (tx)
             .to("direct:end")
 }
 
 def result = task.execute()
+
+
 try {
     def ans = result.get(5, TimeUnit.SECONDS)
     log.info "read '$ans' from the camel task future  "

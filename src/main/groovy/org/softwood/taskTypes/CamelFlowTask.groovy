@@ -3,6 +3,7 @@ package org.softwood.taskTypes
 import groovy.transform.ToString
 import groovy.util.logging.Slf4j
 import org.apache.camel.CamelContext
+import org.apache.camel.ProducerTemplate
 import org.apache.camel.builder.RouteBuilder
 import org.apache.camel.impl.DefaultCamelContext
 import org.apache.camel.Exchange
@@ -26,7 +27,7 @@ import java.util.concurrent.CompletableFuture
 class CamelFlowTask implements ExecutableTaskTrait {
     String taskType = this.class.getSimpleName()
     TaskCategories taskCategory = TaskCategories.Task
-    private CamelContext camelContext
+    CamelContext camelContext
     private Map<String, Closure> routeConfigurations = [:]
     private Map<String, CircuitBreakerDefinition> circuitBreakerMetrics = [:]
     private Map<String, CompletableFuture<Object>> resultFutures = [:]
@@ -42,33 +43,34 @@ class CamelFlowTask implements ExecutableTaskTrait {
         camelContext.setTracing(false)
         camelContext.setMessageHistory(true)
         camelContext.setLoadTypeConverters(true)
+        log.info "constructor: started camel context "
+        camelContext.start()
+
     }
 
 
     private CompletableFuture startCamelFlow (Map variables = [:]) {
-        CompletableFuture result =  CompletableFuture.supplyAsync {
-            try {
-                camelContext.start()
 
-                def results = [:]
-                resultFutures.each { routeId, future ->
-                    try {
-                        results[routeId] = future.get()
-                    } catch (Exception e) {
-                        log.error("Error executing route: ${routeId}", e)
-                        future.completeExceptionally(e)
-                    }
+        ProducerTemplate template = camelContext.createProducerTemplate()
+
+        def results = [:]
+        def num = resultFutures.size()
+        resultFutures.each { routeId, future ->
+            future.supplyAsync {
+                try {
+                    //invoke the route
+                    log.info "send body message to route $routeId"
+                    template.sendBody("direct:start", "This is a test message")
+                } catch (Exception e) {
+                    log.error("Error executing route: ${routeId}", e)
+                    future.completeExceptionally(e)
+                } finally {
+                    shutdownCamelContext()
                 }
-
-                return results
-            } catch (Exception e) {
-                log.error("Error during execution", e)
-                throw e
-            } finally {
-                shutdownCamelContext()
             }
-        }
-        return result
+         }
+        CompletableFuture fut = resultFutures["test-route"]
+        fut
     }
 
     def addRoute(RouteConfig config, @DelegatesTo(RouteBuilder) Closure closure) {
