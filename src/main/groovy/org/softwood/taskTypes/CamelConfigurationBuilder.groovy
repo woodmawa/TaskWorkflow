@@ -83,11 +83,6 @@ class DynamicRouteManager {
 
                 // Add circuit breaker if configured
                 if (config.circuitBreaker) {
-                    Processor processor = { Exchange exchange ->
-                        if (config.circuitBreaker.fallback) {
-                            config.circuitBreaker.fallback.call(exchange)
-                        }
-                    } as Processor
                     OnFallbackDefinition fallback = new OnFallbackDefinition()
                     route.circuitBreaker()
                             .resilience4jConfiguration()
@@ -95,9 +90,7 @@ class DynamicRouteManager {
                             .waitDurationInOpenState(config.circuitBreaker.resetTimeout)
                             .permittedNumberOfCallsInHalfOpenState(config.circuitBreaker.halfOpenAttempts)
                             .end()
-                            .onFallbackViaNetwork()
-                            //.onFallbackViaNetwork()
-                                //.transfprocessor)
+                            .onFallback()
                 }
 
                 // Apply route definition
@@ -106,15 +99,7 @@ class DynamicRouteManager {
 
                 // Add completion handling
                 route.to(config.resultEndpoint)
-                        .process(new Processor() {
-                            @Override
-                            void process(Exchange exchange) {
-                                if (config.onComplete) {
-                                    config.onComplete.call(exchange)
-                                }
-                            }
-                        })
-
+                .process {Exchange exchange -> if (config.onComplete) config.onComplete.call(exchange)}
                 activeRoutes[config.routeId] = route
             }
         })
