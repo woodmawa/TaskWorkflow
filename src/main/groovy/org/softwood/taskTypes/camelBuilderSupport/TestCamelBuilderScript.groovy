@@ -2,6 +2,7 @@ package org.softwood.taskTypes.camelBuilderSupport
 
 import org.apache.camel.CamelContext
 import org.apache.camel.Exchange
+import org.apache.camel.ProducerTemplate
 import org.apache.camel.component.jms.JmsComponent
 import org.apache.camel.component.file.FileComponent
 import org.apache.camel.component.stream.StreamComponent
@@ -46,7 +47,7 @@ builder.with {
                 .process { exchange ->
                     exchange.in.body = "Processed: ${exchange.in.body}"
                 }
-                .to("file:default-output")
+                .to("stream:out")
     }
 
     route {
@@ -55,10 +56,11 @@ builder.with {
                     def exception = exchange.getProperty(Exchange.EXCEPTION_CAUGHT, Exception.class)
                     log.error("Error processing: ${exception.message}")
                 }
-                .to("file:error-output")
+                .to("stream:out")
     }
 }
 
 
 CamelContext context = builder.build()
-context.createProducerTemplate().
+ProducerTemplate trigger = context.createProducerTemplate()
+trigger.sendBody("any old text ")

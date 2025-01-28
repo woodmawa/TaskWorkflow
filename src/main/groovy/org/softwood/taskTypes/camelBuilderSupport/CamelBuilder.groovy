@@ -51,7 +51,8 @@ class CamelBuilder extends FactoryBuilderSupport {
     class ComponentBuilder {
         private Map<String, DefaultComponent> components = [:]
 
-        def methodMissing(String name, Object[] args) {
+        def methodMissing(String name,  argsList ) {
+            Object[] args = argsList as Object[]
             if (args.size() > 0 && args[0] instanceof DefaultComponent) {
                 components[name] = args[0] as DefaultComponent
             } else if (args.size() > 0 && args[0] instanceof Closure) {
