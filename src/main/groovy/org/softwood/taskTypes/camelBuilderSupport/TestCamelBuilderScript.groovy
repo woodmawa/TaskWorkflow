@@ -3,6 +3,8 @@ package org.softwood.taskTypes.camelBuilderSupport
 import org.apache.camel.CamelContext
 import org.apache.camel.Exchange
 import org.apache.camel.ProducerTemplate
+import org.apache.camel.component.bean.BeanComponent
+import org.apache.camel.component.beanclass.ClassComponent
 import org.apache.camel.component.jms.JmsComponent
 import org.apache.camel.component.file.FileComponent
 import org.apache.camel.component.log.LogComponent
@@ -22,6 +24,12 @@ builder.with {
         stream {
             StreamComponent sc = new StreamComponent()
         }
+        bean {
+            BeanComponent bc = new BeanComponent()
+            def scope = bc.scope
+            bc
+        }
+        clazz (new ClassComponent())
         logger (new LogComponent())
     }
 
@@ -52,6 +60,7 @@ builder.with {
                     exchange.in.body = body.toUpperCase()  //relay the message to stream:out
                 }
                 .to ("log:org.softwood.taskTypes.camelBuilderSupport.TestCamelBuilderScript?level=INFO")
+                .to ("class:org.softwood.taskTypes.camelBuilderSupport.TestClassBean?method=testHello")
                 .to("stream:out")
     }
 

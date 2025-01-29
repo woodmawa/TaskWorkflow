@@ -56,6 +56,10 @@ class CamelBuilder extends FactoryBuilderSupport {
             components['log'] = logger
         }
 
+        def clazz (DefaultComponent clazz) {
+            components['class'] = clazz
+        }
+
         def methodMissing(String name,  argsList ) {
             Object[] args = argsList as Object[]
             if (args.size() > 0 && args[0] instanceof DefaultComponent) {
