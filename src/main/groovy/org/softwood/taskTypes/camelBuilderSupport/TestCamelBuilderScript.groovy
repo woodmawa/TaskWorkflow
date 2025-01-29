@@ -15,7 +15,7 @@ builder.with {
         file(new org.apache.camel.component.file.FileComponent())
         jms {
             JmsComponent component = new JmsComponent()
-            component.createConnectionFactory()
+            //component.createConnectionFactory()
             return component
         }
         stream {
@@ -63,4 +63,6 @@ builder.with {
 
 CamelContext context = builder.build()
 ProducerTemplate trigger = context.createProducerTemplate()
-trigger.sendBody("any old text ")
+trigger.sendBody("direct:start","any old text ")
+sleep(1000)
+context.stop()
