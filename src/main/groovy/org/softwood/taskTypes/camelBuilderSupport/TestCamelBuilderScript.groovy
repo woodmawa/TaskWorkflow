@@ -5,6 +5,7 @@ import org.apache.camel.Exchange
 import org.apache.camel.ProducerTemplate
 import org.apache.camel.component.jms.JmsComponent
 import org.apache.camel.component.file.FileComponent
+import org.apache.camel.component.log.LogComponent
 import org.apache.camel.component.stream.StreamComponent
 
 def builder = new CamelBuilder()
@@ -21,6 +22,7 @@ builder.with {
         stream {
             StreamComponent sc = new StreamComponent()
         }
+        logger (new LogComponent())
     }
 
     route {
@@ -45,8 +47,11 @@ builder.with {
     route {
         from("direct:defaultHandler")
                 .process { exchange ->
-                    exchange.in.body = "Processed: ${exchange.in.body}"
+                    String body = exchange.in.body
+                    log.info "Processed orig input : ${body}"
+                    exchange.in.body = body.toUpperCase()  //relay the message to stream:out
                 }
+                .to ("log:org.softwood.taskTypes.camelBuilderSupport.TestCamelBuilderScript?level=INFO")
                 .to("stream:out")
     }
 

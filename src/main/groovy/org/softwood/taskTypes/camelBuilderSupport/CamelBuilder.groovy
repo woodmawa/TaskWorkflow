@@ -4,6 +4,7 @@ import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.apache.camel.CamelContext
 import org.apache.camel.builder.RouteBuilder
+import org.apache.camel.component.log.LogComponent
 import org.apache.camel.model.ChoiceDefinition
 import org.apache.camel.model.OnExceptionDefinition
 import org.apache.camel.model.ProcessorDefinition
@@ -50,6 +51,10 @@ class CamelBuilder extends FactoryBuilderSupport {
 
     class ComponentBuilder {
         private Map<String, DefaultComponent> components = [:]
+
+        def logger (DefaultComponent logger) {
+            components['log'] = logger
+        }
 
         def methodMissing(String name,  argsList ) {
             Object[] args = argsList as Object[]
