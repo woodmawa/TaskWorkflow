@@ -123,6 +123,33 @@ class CamelBuilder extends FactoryBuilderSupport {
             return this
         }
 
+        /**
+         * use when you want to read headers and transform the body data
+         *
+         * @param transform - closure that processes the message before it goes to next step
+         * @return routeDelegate
+         */
+        def transform (Closure transform) {
+            ProcessorDefinition target = currentDefinition
+            target.process {exchange ->
+                transform.call (exchange)
+            }
+            return this
+        }
+
+        /**
+         * use when your want to filter out data from the message and just process the matched result output
+         * @param filter
+         * @return routeDelegate
+         */
+        def filter (Closure filter) {
+            ProcessorDefinition target = currentDefinition
+            target.process {exchange ->
+                filter.call (exchange)
+            }
+            return this
+        }
+
         def process(Closure processor) {
             def target = choiceDefinition ?: exceptionDefinition ?: currentDefinition
             target.process { exchange ->

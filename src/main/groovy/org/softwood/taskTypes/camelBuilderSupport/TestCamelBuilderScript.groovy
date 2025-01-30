@@ -53,8 +53,8 @@ builder.with {
     }
 
     route {
-        from("direct:defaultHandler")
-                .process { exchange ->
+        def fr = from("direct:defaultHandler")
+                fr.transform { exchange ->
                     String body = exchange.in.body
                     log.info "Processed orig input : ${body}"
                     exchange.in.body = body.toUpperCase()  //relay the message to stream:out
