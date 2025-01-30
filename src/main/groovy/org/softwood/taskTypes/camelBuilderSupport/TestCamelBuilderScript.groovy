@@ -53,8 +53,14 @@ builder.with {
     }
 
     route {
+        def cb = it
+        def cur = this
+        def del = delegate
+        def own = owner
+        def par = owner.delegate
+        def res = par.from ("direct:defaultHandler" )
         def fr = from("direct:defaultHandler")
-                fr.transform { exchange ->
+                fr.xxtransform { exchange ->
                     String body = exchange.in.body
                     log.info "Processed orig input : ${body}"
                     exchange.in.body = body.toUpperCase()  //relay the message to stream:out

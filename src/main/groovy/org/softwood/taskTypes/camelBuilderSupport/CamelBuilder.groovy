@@ -33,7 +33,13 @@ class CamelBuilder extends FactoryBuilderSupport {
         producerTemplate = context.createProducerTemplate()
     }
 
-    def components(@DelegatesTo(ComponentBuilder) Closure closure) {
+    /**
+     * method call in builder - processes components closure and adds all the
+     * components from the array into the and registers them all into the camel context
+     * @param components closure to process - delegatesTo ComponentBuilder
+     * @return void
+     */
+    void components(@DelegatesTo(ComponentBuilder) Closure closure) {
         def componentBuilder = new ComponentBuilder()
         closure.delegate = componentBuilder
         closure.resolveStrategy = Closure.DELEGATE_FIRST
@@ -82,7 +88,12 @@ class CamelBuilder extends FactoryBuilderSupport {
         }
     }
 
-    def route(@DelegatesTo(RouteBuilder) Closure closure) {
+    /**
+     * CamelBuilder #route -invoked when route definition is found in the script
+     * @param closure - definition of the route as closure, delegateTo RouteBuilder
+     * @return array of CamelBuilder.compiled routes
+     */
+    void route(@DelegatesTo(RouteBuilder) Closure closure) {
         def routeBuilder = new RouteBuilder() {
             @Override
             void configure() {
@@ -100,7 +111,7 @@ class CamelBuilder extends FactoryBuilderSupport {
         return new RouteDelegate(routeDef)
     }
 
-    // Route delegate class to maintain proper chaining
+    // Route delegate helper class to maintain proper chaining
     class RouteDelegate {
         private ProcessorDefinition<?> currentDefinition
         private ChoiceDefinition choiceDefinition
@@ -129,9 +140,10 @@ class CamelBuilder extends FactoryBuilderSupport {
          * @param transform - closure that processes the message before it goes to next step
          * @return routeDelegate
          */
-        def transform (Closure transform) {
+        def xxtransform (@DelegatesTo(RouteBuilder) Closure transform) {
             ProcessorDefinition target = currentDefinition
             target.process {exchange ->
+                transform.delegate = this
                 transform.call (exchange)
             }
             return this
@@ -244,6 +256,11 @@ class CamelBuilder extends FactoryBuilderSupport {
         }
     }
 
+    /**
+     * takes all the processed routes declared and adds them to the context
+     * and starts the context
+     * @return camelContex[running]
+     */
     def build() {
         CamelContext ctx = context
         routes.each { route ->
@@ -253,6 +270,10 @@ class CamelBuilder extends FactoryBuilderSupport {
         return context
     }
 
+    /**
+     * stop the camel context and clean up resources
+     * @return
+     */
     def stop() {
         try {
             producerTemplate?.close()
