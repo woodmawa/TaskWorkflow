@@ -23,7 +23,7 @@ import java.util.function.Predicate
 @Slf4j
 class CamelBuilder extends FactoryBuilderSupport {
     private CamelContext context
-    private List<RouteBuilder> routes = []
+    private List<RouteDelegate> routes = []
     private Map<String, DefaultComponent> components = [:]
     private ProducerTemplate producerTemplate
 
@@ -93,8 +93,16 @@ class CamelBuilder extends FactoryBuilderSupport {
      * @param closure - definition of the route as closure, delegateTo RouteBuilder
      * @return array of CamelBuilder.compiled routes
      */
-    void route(@DelegatesTo(RouteBuilder) Closure closure) {
-        def routeBuilder = new RouteBuilder() {
+    void route(@DelegatesTo(RouteDelegate) Closure closure) {
+        /*def routeBuilder = new RouteBuilder() {
+            @Override
+            void configure() {
+                closure.delegate = this
+                closure.resolveStrategy = Closure.DELEGATE_FIRST
+                closure.call()
+            }
+        }*/
+        def routeDelegate = new RouteDelegate() {
             @Override
             void configure() {
                 closure.delegate = this
@@ -102,7 +110,7 @@ class CamelBuilder extends FactoryBuilderSupport {
                 closure.call()
             }
         }
-        routes << routeBuilder
+        routes << routeDelegate
     }
 
     def from(String uri) {
@@ -111,14 +119,27 @@ class CamelBuilder extends FactoryBuilderSupport {
         return new RouteDelegate(routeDef)
     }
 
-    // Route delegate helper class to maintain proper chaining
-    class RouteDelegate {
+    /**
+     * Route delegate helper class to maintain proper chaining, wraps the camel RouteBuilder as a delegate
+     * but provides its own overriding methods for the closure delegate in the script
+     *
+     */
+    class RouteDelegate extends RouteBuilder {
+        @Delegate private RouteBuilder currentRouteBuilder  //otherwise delegate calls to camel RouteBuilder
         private ProcessorDefinition<?> currentDefinition
         private ChoiceDefinition choiceDefinition
         private OnExceptionDefinition exceptionDefinition
 
+        //legacy not taking RouteBuilder as closure delegate any longer - but wrapped inside a RouteDelegate
         RouteDelegate(RouteDefinition routeDefinition) {
             this.currentDefinition = routeDefinition
+        }
+
+        //new entry point sups up nee routeDelegate with wrapped route builder
+        RouteDelegate() {
+            super()
+            this.currentRouteBuilder = this
+            currentDefinition = this.routes.route()
         }
 
         def to(String uri) {
@@ -140,7 +161,7 @@ class CamelBuilder extends FactoryBuilderSupport {
          * @param transform - closure that processes the message before it goes to next step
          * @return routeDelegate
          */
-        def xxtransform (@DelegatesTo(RouteBuilder) Closure transform) {
+        def transform ( Closure transform) {
             ProcessorDefinition target = currentDefinition
             target.process {exchange ->
                 transform.delegate = this
@@ -204,11 +225,11 @@ class CamelBuilder extends FactoryBuilderSupport {
             return this
         }
 
-        def onException(Class<? extends Exception> exceptionClass) {
+        /*def onException(Class<? extends Exception> exceptionClass) {
             def routeDef = currentDefinition as RouteDefinition
             exceptionDefinition = routeDef.onException(exceptionClass)
             return this
-        }
+        }*/
 
         def handled(boolean handled) {
             if (!exceptionDefinition) {
@@ -264,7 +285,7 @@ class CamelBuilder extends FactoryBuilderSupport {
     def build() {
         CamelContext ctx = context
         routes.each { route ->
-            ctx.addRoutes(route )
+            ctx.addRoutes(route.currentRouteBuilder )
         }
         context.start()
         return context

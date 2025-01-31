@@ -60,7 +60,7 @@ builder.with {
         def par = owner.delegate
         def res = par.from ("direct:defaultHandler" )
         def fr = from("direct:defaultHandler")
-                fr.xxtransform { exchange ->
+                .transform { exchange ->
                     String body = exchange.in.body
                     log.info "Processed orig input : ${body}"
                     exchange.in.body = body.toUpperCase()  //relay the message to stream:out
