@@ -34,6 +34,12 @@ builder.with {
     }
 
     route {
+        from ("direct:start")
+        .to ("stream:out")
+    }
+
+    /*
+    route {
         from("direct:start")
             .choice()
                 .when { exchange ->
@@ -48,10 +54,14 @@ builder.with {
                         log.info("Sent to JMS: ${exchange.in.body}")
                     }
                 .otherwise()
-                    .to("direct:defaultHandler")
+                    //.to("direct:defaultHandler")
+                    .to("stream:out")
             .endChoice()
     }
+    */
 
+
+    /*
     route {
         def cb = it
         def cur = this
@@ -78,6 +88,8 @@ builder.with {
                 }
                 .to("stream:out")
     }
+    */
+
 }
 
 

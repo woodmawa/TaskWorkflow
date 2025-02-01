@@ -23,7 +23,7 @@ import java.util.function.Predicate
 @Slf4j
 class CamelBuilder extends FactoryBuilderSupport {
     private CamelContext context
-    private List<RouteDelegate> routes = []
+    private List routes = []  //<? extends  RouteBuilder>
     private Map<String, DefaultComponent> components = [:]
     private ProducerTemplate producerTemplate
 
@@ -93,7 +93,7 @@ class CamelBuilder extends FactoryBuilderSupport {
      * @param closure - definition of the route as closure, delegateTo RouteBuilder
      * @return array of CamelBuilder.compiled routes
      */
-    void route(@DelegatesTo(RouteDelegate) Closure closure) {
+    void route(@DelegatesTo(RouteExtra) Closure closure) {
         /*def routeBuilder = new RouteBuilder() {
             @Override
             void configure() {
@@ -102,6 +102,7 @@ class CamelBuilder extends FactoryBuilderSupport {
                 closure.call()
             }
         }*/
+        /*
         def routeDelegate = new RouteDelegate() {
             @Override
             void configure() {
@@ -110,16 +111,50 @@ class CamelBuilder extends FactoryBuilderSupport {
                 closure.call()
             }
         }
-        routes << routeDelegate
+        */
+        def routeExtra = new RouteExtra() {
+            @Override
+            void configure() {
+                closure.delegate = this
+                closure.resolveStrategy = Closure.DELEGATE_FIRST
+                closure.call()
+            }
+        }
+        routes << routeExtra
     }
 
     def from(String uri) {
-        def currentRouteBuilder = routes?.last()
+        RouteExtra currentRouteBuilder = (RouteExtra) routes?.last()
         def routeDef = currentRouteBuilder?.from(uri)
-        return new RouteDelegate(routeDef)
+        return new RouteExtra(routeDef)  //RouteDelegate
     }
 
-    /**
+
+    //give this a try extra extends from route builder
+    class RouteExtra extends RouteBuilder {
+
+
+        RouteDefinition routeDefinition
+
+        RouteExtra (routeDef = null) {
+            super()
+            def defaultRoute = super.routes.route()
+            routeDefinition = routeDef as RouteDefinition ?: defaultRoute
+            routeDefinition
+        }
+
+        @Override
+        void configure() throws Exception {
+
+        }
+
+
+        def trans (Closure closure) {
+            println "call trans method "
+        }
+    }
+
+     /**
      * Route delegate helper class to maintain proper chaining, wraps the camel RouteBuilder as a delegate
      * but provides its own overriding methods for the closure delegate in the script
      *
@@ -284,8 +319,9 @@ class CamelBuilder extends FactoryBuilderSupport {
      */
     def build() {
         CamelContext ctx = context
-        routes.each { route ->
-            ctx.addRoutes(route.currentRouteBuilder )
+        routes.each {  route ->
+            RouteBuilder rb = (RouteBuilder) route
+            ctx.addRoutes(rb ) //route.currentRouteBuilder
         }
         context.start()
         return context
