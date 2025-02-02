@@ -3,12 +3,14 @@ package org.softwood.taskTypes.camelBuilderSupport
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.apache.camel.CamelContext
+import org.apache.camel.RoutesBuilder
 import org.apache.camel.builder.RouteBuilder
 import org.apache.camel.component.log.LogComponent
 import org.apache.camel.model.ChoiceDefinition
 import org.apache.camel.model.OnExceptionDefinition
 import org.apache.camel.model.ProcessorDefinition
 import org.apache.camel.model.RouteDefinition
+import org.apache.camel.model.RoutesDefinition
 import org.apache.camel.impl.DefaultCamelContext
 import org.apache.camel.ProducerTemplate
 import org.apache.camel.support.DefaultComponent
@@ -23,7 +25,7 @@ import java.util.function.Predicate
 @Slf4j
 class CamelBuilder extends FactoryBuilderSupport {
     private CamelContext context
-    private List routes = []  //<? extends  RouteBuilder>
+    private List<RouteDelegate> routes = []  //<? extends  RouteBuilder>
     private Map<String, DefaultComponent> components = [:]
     private ProducerTemplate producerTemplate
 
@@ -93,8 +95,8 @@ class CamelBuilder extends FactoryBuilderSupport {
      * @param closure - definition of the route as closure, delegateTo RouteBuilder
      * @return array of CamelBuilder.compiled routes
      */
-    void route(@DelegatesTo(RouteExtra) Closure closure) {
-        /*def routeBuilder = new RouteBuilder() {
+    void route(@DelegatesTo(RouteDelegate) Closure userClosure) {
+        /*original using : def routeBuilder = new RouteBuilder() {
             @Override
             void configure() {
                 closure.delegate = this
@@ -102,77 +104,122 @@ class CamelBuilder extends FactoryBuilderSupport {
                 closure.call()
             }
         }*/
-        /*
-        def routeDelegate = new RouteDelegate() {
-            @Override
-            void configure() {
-                closure.delegate = this
-                closure.resolveStrategy = Closure.DELEGATE_FIRST
-                closure.call()
-            }
-        }
-        */
-        def routeExtra = new RouteExtra() {
-            @Override
-            void configure() {
-                closure.delegate = this
-                closure.resolveStrategy = Closure.DELEGATE_FIRST
-                closure.call()
-            }
-        }
-        routes << routeExtra
+
+        RouteDelegate routeDelegate = new RouteDelegate (userClosure)
+        routes << routeDelegate
     }
 
+    /**
+     * create a routeDelegate that we can expand that relays to RouteBuilder as
+     * delegate.  Takes the closure with the route definition from CamelBuilder closure
+     * and sets the route definition closure in user script  with the RouteDelegate as its
+     * closure delegate
+     */
+    class RouteDelegate {
+
+        Closure closure
+        private RouteDefinition currentDefinition
+
+        //sets up the delegating routeBuilder
+        /* @delegate */ RouteBuilder routeBuilder = new RouteBuilder() {
+            @Override
+            void configure() {
+                //set the users script closure delegate to be this routeDelegate instance
+                closure.delegate = this
+                closure.resolveStrategy = Closure.DELEGATE_FIRST
+                closure.call()
+            }
+        }
+
+        RouteDelegate (Closure closure ) {
+            //takes copy of the users route script closure to set up the delegate routeBuilder
+            this.closure = closure
+        }
+
+        /**
+         * relay for the from call
+         * @param uri
+         * @return
+         */
+         RouteDelegate willsFrom (String uri) {
+            //call the delegate so we can save the routeDefinition from the builder
+            currentDefinition  = routeBuilder.from (uri)
+            println "saved routeDefinition as $currentDefinition"
+
+            this
+        }
+
+        RouteDefinition from (String uri) {
+            //call the delegate so we can save the routeDefinition from the builder
+            currentDefinition  = routeBuilder.from (uri)
+            println "--> save and retrun routeDefinition as $currentDefinition"
+
+            currentDefinition
+        }
+
+
+        def methodMissing (String name, args) {
+            println "--> routeDelegate: method missing $name and args $args "
+            def meth = currentDefinition.respondsTo (name, args)
+            def method = currentDefinition.metaClass.getMetaMethod(name, (String) args)
+            if (method) {
+                def result = method.invoke (this, name, args)
+                if (result instanceof ProcessorDefinition) {
+                    currentDefinition = (RouteDefinition) result
+                }
+                return this
+            }
+            throw new MissingMethodException (name, this.class, args)
+        }
+        /**
+         * use when you want to read headers and transform the body data
+         *
+         * @param transform - closure that processes the message before it goes to next step
+         * @return routeDelegate
+         */
+        def xxx ( transform) {
+            println "---> transform () called on delegate with arg: $transform"
+            /*
+            ProcessorDefinition target = currentDefinition
+            target.process {exchange ->
+                transform.delegate = this
+                transform.call (exchange)
+            }*/
+            return this
+        }
+    }
+
+    //doesnt normally seem to get to this  - goes to RouteBuilder.from() !
+    /*
     def from(String uri) {
-        RouteExtra currentRouteBuilder = (RouteExtra) routes?.last()
+        println "--> called from($uri) in CamelBuilder"
+        RouteBuilder currentRouteBuilder = (RouteBuilder) routes?.last()
         def routeDef = currentRouteBuilder?.from(uri)
-        return new RouteExtra(routeDef)  //RouteDelegate
+        return routeDef//new RouteExtra(routeDef)  //RouteDelegate
     }
+*/
 
-
-    //give this a try extra extends from route builder
-    class RouteExtra extends RouteBuilder {
-
-
-        RouteDefinition routeDefinition
-
-        RouteExtra (routeDef = null) {
-            super()
-            def defaultRoute = super.routes.route()
-            routeDefinition = routeDef as RouteDefinition ?: defaultRoute
-            routeDefinition
-        }
-
-        @Override
-        void configure() throws Exception {
-
-        }
-
-
-        def trans (Closure closure) {
-            println "call trans method "
-        }
-    }
 
      /**
-     * Route delegate helper class to maintain proper chaining, wraps the camel RouteBuilder as a delegate
+     * not working - keeping in case we need to build back into RouteDelegate
+      * Route delegate helper class to maintain proper chaining, wraps the camel RouteBuilder as a delegate
      * but provides its own overriding methods for the closure delegate in the script
      *
      */
-    class RouteDelegate extends RouteBuilder {
+    class xxRouteDelegate extends RouteBuilder {
         @Delegate private RouteBuilder currentRouteBuilder  //otherwise delegate calls to camel RouteBuilder
         private ProcessorDefinition<?> currentDefinition
         private ChoiceDefinition choiceDefinition
         private OnExceptionDefinition exceptionDefinition
 
         //legacy not taking RouteBuilder as closure delegate any longer - but wrapped inside a RouteDelegate
-        RouteDelegate(RouteDefinition routeDefinition) {
+        xxRouteDelegate(RouteDefinition routeDefinition) {
             this.currentDefinition = routeDefinition
         }
 
         //new entry point sups up nee routeDelegate with wrapped route builder
-        RouteDelegate() {
-            super()
+        xxRouteDelegate() {
+            //super()
             this.currentRouteBuilder = this
             currentDefinition = this.routes.route()
         }
@@ -319,9 +366,8 @@ class CamelBuilder extends FactoryBuilderSupport {
      */
     def build() {
         CamelContext ctx = context
-        routes.each {  route ->
-            RouteBuilder rb = (RouteBuilder) route
-            ctx.addRoutes(rb ) //route.currentRouteBuilder
+        routes.each {  RouteDelegate route ->
+            ctx.addRoutes(route.routeBuilder as RoutesBuilder) //route.currentRouteBuilder
         }
         context.start()
         return context

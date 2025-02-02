@@ -34,8 +34,11 @@ builder.with {
     }
 
     route {
-        from ("direct:start")
-        .to ("stream:out")
+        delegate.xxx ("hello ")
+        def deleg = delegate
+        def rd = willsFrom("direct:start")
+        def mm = rd.currentDefinition.respondsTo ("to","stream:out")
+        rd.to ("stream:out")
     }
 
     /*
