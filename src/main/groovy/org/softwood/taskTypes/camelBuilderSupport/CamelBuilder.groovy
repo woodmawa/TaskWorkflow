@@ -1,5 +1,6 @@
 package org.softwood.taskTypes.camelBuilderSupport
 
+import groovy.transform.CompileDynamic
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.apache.camel.CamelContext
@@ -21,7 +22,7 @@ import org.apache.camel.Predicate
 
 import java.util.function.Predicate
 
-@CompileStatic
+//@CompileDynamic
 @Slf4j
 class CamelBuilder extends FactoryBuilderSupport {
     private CamelContext context
@@ -96,14 +97,6 @@ class CamelBuilder extends FactoryBuilderSupport {
      * @return array of CamelBuilder.compiled routes
      */
     void route(@DelegatesTo(RouteDelegate) Closure userClosure) {
-        /*original using : def routeBuilder = new RouteBuilder() {
-            @Override
-            void configure() {
-                closure.delegate = this
-                closure.resolveStrategy = Closure.DELEGATE_FIRST
-                closure.call()
-            }
-        }*/
 
         RouteDelegate routeDelegate = new RouteDelegate (userClosure)
         routes << routeDelegate
@@ -115,247 +108,102 @@ class CamelBuilder extends FactoryBuilderSupport {
      * and sets the route definition closure in user script  with the RouteDelegate as its
      * closure delegate
      */
+    //@CompileDynamic
     class RouteDelegate {
 
-        Closure closure
-        private RouteDefinition currentDefinition
+        private RouteDefinitionDelegate currentDefinition
 
-        //sets up the delegating routeBuilder
-        /* @delegate */ RouteBuilder routeBuilder = new RouteBuilder() {
-            @Override
-            void configure() {
-                //set the users script closure delegate to be this routeDelegate instance
-                closure.delegate = this
-                closure.resolveStrategy = Closure.DELEGATE_FIRST
-                closure.call()
-            }
-        }
+        RouteBuilder routeBuilder
+
 
         RouteDelegate (Closure closure ) {
+            //sets up the delegating routeBuilder
+             routeBuilder = new RouteBuilder() {
+                @Override
+                void configure() {
+                    //empty configure
+                }
+            }
+
             //takes copy of the users route script closure to set up the delegate routeBuilder
-            this.closure = closure
+            //userRouteClosure = closure
+            closure.delegate = this
+            closure.resolveStrategy = Closure.DELEGATE_FIRST
+
+            // Now call the closure
+            closure.call()
+
         }
 
-        /**
-         * relay for the from call
-         * @param uri
-         * @return
+
+        RouteDefinitionDelegate from (String uri) {
+            //call the delegate so we can save the routeDefinition from the builder
+            def routeDefinition   = routeBuilder.from (uri)
+
+            currentDefinition = new RouteDefinitionDelegate (routeDefinition)
+            return currentDefinition
+        }
+
+
+
+
+        /* if user calls and method not in routeDelegate, presume its targetted to the
+         * currentDefinition and try and invoke that, else generate exception
          */
-         RouteDelegate willsFrom (String uri) {
-            //call the delegate so we can save the routeDefinition from the builder
-            currentDefinition  = routeBuilder.from (uri)
-            println "saved routeDefinition as $currentDefinition"
-
-            this
-        }
-
-        RouteDefinition from (String uri) {
-            //call the delegate so we can save the routeDefinition from the builder
-            currentDefinition  = routeBuilder.from (uri)
-            println "--> save and retrun routeDefinition as $currentDefinition"
-
-            currentDefinition
-        }
-
-
         def methodMissing (String name, args) {
-            println "--> routeDelegate: method missing $name and args $args "
+            log.debug "--> routeDelegate: method missing(): $name and args $args "
+
+            if (currentDefinition == null) {
+                throw new MissingMethodException(name, this.class, args)
+            }
+
             def meth = currentDefinition.respondsTo (name, args)
             def method = currentDefinition.metaClass.getMetaMethod(name, (String) args)
             if (method) {
-                def result = method.invoke (this, name, args)
+                //delegate call out to the return from the from()
+                log.info "--> routeDelegate: found method  $name on currentDefinitionDelegate, invoking it  "
+
+                def result = method.invoke (currentDefinition, args)
                 if (result instanceof ProcessorDefinition) {
-                    currentDefinition = (RouteDefinition) result
+                    currentDefinition = new RouteDefinitionDelegate( result)
                 }
                 return this
             }
             throw new MissingMethodException (name, this.class, args)
         }
-        /**
-         * use when you want to read headers and transform the body data
-         *
-         * @param transform - closure that processes the message before it goes to next step
-         * @return routeDelegate
-         */
-        def xxx ( transform) {
-            println "---> transform () called on delegate with arg: $transform"
-            /*
-            ProcessorDefinition target = currentDefinition
-            target.process {exchange ->
-                transform.delegate = this
-                transform.call (exchange)
-            }*/
-            return this
-        }
-    }
-
-    //doesnt normally seem to get to this  - goes to RouteBuilder.from() !
-    /*
-    def from(String uri) {
-        println "--> called from($uri) in CamelBuilder"
-        RouteBuilder currentRouteBuilder = (RouteBuilder) routes?.last()
-        def routeDef = currentRouteBuilder?.from(uri)
-        return routeDef//new RouteExtra(routeDef)  //RouteDelegate
-    }
-*/
-
-
-     /**
-     * not working - keeping in case we need to build back into RouteDelegate
-      * Route delegate helper class to maintain proper chaining, wraps the camel RouteBuilder as a delegate
-     * but provides its own overriding methods for the closure delegate in the script
-     *
-     */
-    class xxRouteDelegate extends RouteBuilder {
-        @Delegate private RouteBuilder currentRouteBuilder  //otherwise delegate calls to camel RouteBuilder
-        private ProcessorDefinition<?> currentDefinition
-        private ChoiceDefinition choiceDefinition
-        private OnExceptionDefinition exceptionDefinition
-
-        //legacy not taking RouteBuilder as closure delegate any longer - but wrapped inside a RouteDelegate
-        xxRouteDelegate(RouteDefinition routeDefinition) {
-            this.currentDefinition = routeDefinition
-        }
-
-        //new entry point sups up nee routeDelegate with wrapped route builder
-        xxRouteDelegate() {
-            //super()
-            this.currentRouteBuilder = this
-            currentDefinition = this.routes.route()
-        }
-
-        def to(String uri) {
-            if (choiceDefinition) {
-                choiceDefinition.to(uri)
-                return this
-            }
-            if (exceptionDefinition) {
-                exceptionDefinition.to(uri)
-                return this
-            }
-            currentDefinition.to(uri)
-            return this
-        }
 
         /**
-         * use when you want to read headers and transform the body data
-         *
-         * @param transform - closure that processes the message before it goes to next step
-         * @return routeDelegate
+         * delegate class for route definintion, user can add own transformation methods
+         * on this class, and it not defined will delegate to the actual route definition
          */
-        def transform ( Closure transform) {
-            ProcessorDefinition target = currentDefinition
-            target.process {exchange ->
-                transform.delegate = this
-                transform.call (exchange)
-            }
-            return this
-        }
+        //@CompileDynamic
+        class RouteDefinitionDelegate {
+            @Delegate RouteDefinition routeDefinition
 
-        /**
-         * use when your want to filter out data from the message and just process the matched result output
-         * @param filter
-         * @return routeDelegate
-         */
-        def filter (Closure filter) {
-            ProcessorDefinition target = currentDefinition
-            target.process {exchange ->
-                filter.call (exchange)
+            RouteDefinitionDelegate (RouteDefinition routeDefinition) {
+                this.routeDefinition = routeDefinition
             }
-            return this
-        }
 
-        def process(Closure processor) {
-            def target = choiceDefinition ?: exceptionDefinition ?: currentDefinition
-            target.process { exchange ->
-                processor.call(exchange)
-            }
-            return this
-        }
+            /**
+             * use when you want to read headers and transform the body data
+             *
+             * @param transform - closure that processes the message before it goes to next step
+             * @return routeDelegate
+             */
+            def transform ( Closure transform) {
+                log.info "transform processor ():  called on routeDefinition delegate with closure: " + transform.toString()
 
-        def choice() {
-            choiceDefinition = currentDefinition.choice()
-            return this
-        }
+                        ProcessorDefinition target = currentDefinition.routeDefinition
+                def result = target.process {exchange ->
+                    transform.delegate = this
+                    transform.call (exchange)
 
-        def when(Closure predicate) {
-            if (!choiceDefinition) {
-                throw new IllegalStateException("when() can only be called after choice()")
-            }
-            choiceDefinition = choiceDefinition.when(new org.apache.camel.Predicate() {
-                boolean matches(org.apache.camel.Exchange exchange) {
-                    return predicate.call(exchange)
                 }
-            })
-            return this
-        }
+                currentDefinition = new RouteDefinitionDelegate (result)
+                return currentDefinition
 
-        def otherwise() {
-            if (!choiceDefinition) {
-                throw new IllegalStateException("otherwise() can only be called after choice()")
             }
-            choiceDefinition = choiceDefinition.otherwise()
-            return this
-        }
 
-        def endChoice() {
-            if (!choiceDefinition) {
-                throw new IllegalStateException("endChoice() can only be called after choice()")
-            }
-            currentDefinition = choiceDefinition.end()
-            choiceDefinition = null
-            return this
-        }
-
-        /*def onException(Class<? extends Exception> exceptionClass) {
-            def routeDef = currentDefinition as RouteDefinition
-            exceptionDefinition = routeDef.onException(exceptionClass)
-            return this
-        }*/
-
-        def handled(boolean handled) {
-            if (!exceptionDefinition) {
-                throw new IllegalStateException("handled() can only be called within onException()")
-            }
-            exceptionDefinition.handled(handled)
-            return this
-        }
-
-        def endOnException() {
-            if (!exceptionDefinition) {
-                throw new IllegalStateException("endOnException() can only be called after onException()")
-            }
-            currentDefinition = exceptionDefinition.end()
-            exceptionDefinition = null
-            return this
-        }
-
-        def circuitBreaker(@DelegatesTo(RouteBuilder) Closure closure) {
-            def target = choiceDefinition ?: currentDefinition
-            def breaker = target.circuitBreaker()
-            breaker.process { exchange ->
-                closure.call(exchange)
-            }
-            if (choiceDefinition) {
-                choiceDefinition = breaker.endChoice()
-            } else {
-                currentDefinition = breaker.end()
-            }
-            return this
-        }
-
-        def methodMissing(String name, args) {
-            def definition = choiceDefinition ?: exceptionDefinition ?: currentDefinition
-            def method = definition.metaClass.getMetaMethod(name, args)
-            if (method) {
-                def result = method.invoke(definition, args)
-                // If the result is a ProcessorDefinition, update our current definition
-                if (result instanceof ProcessorDefinition && !choiceDefinition && !exceptionDefinition) {
-                    currentDefinition = result
-                }
-                return this
-            }
-            throw new MissingMethodException(name, this.class, args)
         }
     }
 
@@ -366,8 +214,8 @@ class CamelBuilder extends FactoryBuilderSupport {
      */
     def build() {
         CamelContext ctx = context
-        routes.each {  RouteDelegate route ->
-            ctx.addRoutes(route.routeBuilder as RoutesBuilder) //route.currentRouteBuilder
+        routes.each {  RouteDelegate routeDelegate ->
+            ctx.addRoutes(routeDelegate.routeBuilder) //as RouteBuilder : route.currentRouteBuilder
         }
         context.start()
         return context
@@ -409,5 +257,7 @@ class CamelBuilder extends FactoryBuilderSupport {
             producerTemplate.sendBody("direct:$routeId", "")
         }
     }
+
+
 }
 
