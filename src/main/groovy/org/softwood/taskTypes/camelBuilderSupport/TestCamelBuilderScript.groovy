@@ -48,8 +48,8 @@ builder.with {
                         log.info("Sent to JMS: ${exchange.in.body}")
                     }
                 .otherwise()
-                    //.to("direct:defaultHandler")
-                    .to("stream:out")
+                    .to("direct:defaultHandler")
+                    //.to("stream:out")
             .endChoice()
     }
 

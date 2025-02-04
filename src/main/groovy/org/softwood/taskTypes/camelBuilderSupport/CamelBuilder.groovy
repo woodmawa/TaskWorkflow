@@ -141,7 +141,8 @@ class CamelBuilder extends FactoryBuilderSupport {
             def routeDefinition   = routeBuilder.from (uri)
 
             currentDefinition = new RouteDefinitionDelegate (routeDefinition)
-            return currentDefinition
+            log.info "returning route definition delegate for (" + routeDefinition + ")"
+            return currentDefinition as RouteDefinitionDelegate
         }
 
 
@@ -151,7 +152,7 @@ class CamelBuilder extends FactoryBuilderSupport {
          * currentDefinition and try and invoke that, else generate exception
          */
         def methodMissing (String name, args) {
-            log.debug "--> routeDelegate: method missing(): $name and args $args "
+            log.info "--> routeDelegate: method missing(): $name and args $args "
 
             if (currentDefinition == null) {
                 throw new MissingMethodException(name, this.class, args)
@@ -191,6 +192,7 @@ class CamelBuilder extends FactoryBuilderSupport {
                     case {it instanceof OnExceptionDefinition}  -> exceptionDefinition = routeDefinition
                     default -> "no op"
                 }
+                log.info " setup RouteDefinitionDelegate for ($routeDefinition)"
             }
 
             /**
@@ -228,6 +230,14 @@ class CamelBuilder extends FactoryBuilderSupport {
                 return currentDefinition
             }
 
+            def choice (Closure choice) {
+                ChoiceDefinition target = choiceDefinition
+                //could detect # params and split into header and body ...
+                def result = target.choice ()
+                currentDefinition = new RouteDefinitionDelegate (result)
+                log.info "found choice $result, return as RouteDefinitionDelegate "
+                return currentDefinition
+            }
         }
     }
 
