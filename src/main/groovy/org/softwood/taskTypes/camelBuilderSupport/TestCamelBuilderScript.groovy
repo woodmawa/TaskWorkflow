@@ -35,13 +35,6 @@ builder.with {
 
     route {
         from("direct:start")
-            .transform {println "--> (transform) hello from transform "}
-            .to ("stream:out")
-    }
-
-    /*
-    route {
-        from("direct:start")
             .choice()
                 .when { exchange ->
                     exchange.in.body.toString().contains("file")
@@ -59,18 +52,10 @@ builder.with {
                     .to("stream:out")
             .endChoice()
     }
-    */
 
 
-    /*
     route {
-        def cb = it
-        def cur = this
-        def del = delegate
-        def own = owner
-        def par = owner.delegate
-        def res = par.from ("direct:defaultHandler" )
-        def fr = from("direct:defaultHandler")
+       def fr = from("direct:defaultHandler")
                 .transform { exchange ->
                     String body = exchange.in.body
                     log.info "Processed orig input : ${body}"
@@ -83,13 +68,12 @@ builder.with {
 
     route {
         from("direct:errorHandler")
-                .process { exchange ->
-                    def exception = exchange.getProperty(Exchange.EXCEPTION_CAUGHT, Exception.class)
-                    log.error("Error processing: ${exception.message}")
-                }
-                .to("stream:out")
+            .process { exchange ->
+                def exception = exchange.getProperty(Exchange.EXCEPTION_CAUGHT, Exception.class)
+                log.error("Error processing: ${exception.message}")
+            }
+            .to("stream:out")
     }
-    */
 
 }
 

@@ -179,9 +179,18 @@ class CamelBuilder extends FactoryBuilderSupport {
         //@CompileDynamic
         class RouteDefinitionDelegate {
             @Delegate RouteDefinition routeDefinition
+            private ProcessorDefinition processDefinition
+            private ChoiceDefinition  choiceDefinition
+            private OnExceptionDefinition exceptionDefinition
 
             RouteDefinitionDelegate (RouteDefinition routeDefinition) {
                 this.routeDefinition = routeDefinition
+                def result = switch (routeDefinition) {
+                    case {it instanceof ProcessorDefinition} -> processDefinition = routeDefinition
+                    case {it instanceof ChoiceDefinition} -> choiceDefinition = routeDefinition
+                    case {it instanceof OnExceptionDefinition}  -> exceptionDefinition = routeDefinition
+                    default -> "no op"
+                }
             }
 
             /**
@@ -202,6 +211,21 @@ class CamelBuilder extends FactoryBuilderSupport {
                 currentDefinition = new RouteDefinitionDelegate (result)
                 return currentDefinition
 
+            }
+
+            /**
+             * use when your want to filter out data from the message and just process the matched result output
+             * @param filter
+             * @return routeDelegate
+             */
+            def filter (Closure filter) {
+                ProcessorDefinition target = currentDefinition
+                //could detect # params and split into header and body ...
+                def result = target.process {exchange ->
+                    filter.call (exchange)
+                }
+                currentDefinition = new RouteDefinitionDelegate (result)
+                return currentDefinition
             }
 
         }
