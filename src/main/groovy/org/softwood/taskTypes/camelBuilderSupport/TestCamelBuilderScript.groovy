@@ -34,46 +34,51 @@ builder.with {
     }
 
     route {
-        from("direct:start")
-            .choice()
-                .when { exchange ->
+        from("direct:start") {
+            choice {
+                when { exchange ->
                     exchange.in.body.toString().contains("file")
                 }
-                    .to("file:output")
-                .when { exchange ->
-                    exchange.in.body.toString().contains("jms")
+                to("file:output") {
+                    when { exchange ->
+                        exchange.in.body.toString().contains("jms")
+                    }
                 }
-                    .to("jms:queue:orders")
-                    .process { exchange ->
+                to("jms:queue:orders") {
+                    process { exchange ->
                         log.info("Sent to JMS: ${exchange.in.body}")
                     }
-                .otherwise()
-                    .to("direct:defaultHandler")
-                    //.to("stream:out")
-            .endChoice()
-    }
-
-
-    route {
-       def fr = from("direct:defaultHandler")
-                .transform { exchange ->
-                    String body = exchange.in.body
-                    log.info "Processed orig input : ${body}"
-                    exchange.in.body = body.toUpperCase()  //relay the message to stream:out
                 }
-                .to ("log:org.softwood.taskTypes.camelBuilderSupport.TestCamelBuilderScript?level=INFO")
-                .to ("class:org.softwood.taskTypes.camelBuilderSupport.TestClassBean?method=testHello")
-                .to("stream:out")
+                otherwise {
+                    to("direct:defaultHandler")
+                } //end otherwise
+
+            } //end choice
+        }
     }
 
     route {
-        from("direct:errorHandler")
-            .process { exchange ->
+       def fr = from("direct:defaultHandler") {
+           transform { exchange ->
+               String body = exchange.in.body
+               log.info "Processed orig input : ${body}"
+               exchange.in.body = body.toUpperCase()  //relay the message to stream:out
+           }
+           to("log:org.softwood.taskTypes.camelBuilderSupport.TestCamelBuilderScript?level=INFO")
+           to("class:org.softwood.taskTypes.camelBuilderSupport.TestClassBean?method=testHello")
+           to("stream:out")
+       }
+    }
+
+    route {
+        from("direct:errorHandler") {
+            process { exchange ->
                 def exception = exchange.getProperty(Exchange.EXCEPTION_CAUGHT, Exception.class)
                 log.error("Error processing: ${exception.message}")
             }
-            .to("stream:out")
-    }
+            to("stream:out")
+        }
+    } //end route
 
 }
 

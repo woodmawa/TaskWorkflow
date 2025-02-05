@@ -112,7 +112,6 @@ class CamelBuilder extends FactoryBuilderSupport {
     class RouteDelegate {
 
         private RouteDefinitionDelegate currentDefinition
-
         RouteBuilder routeBuilder
 
 
@@ -136,11 +135,19 @@ class CamelBuilder extends FactoryBuilderSupport {
         }
 
 
-        RouteDefinitionDelegate from (String uri) {
+        RouteDefinitionDelegate from (String uri, closure ) {
             //call the delegate so we can save the routeDefinition from the builder
             def routeDefinition   = routeBuilder.from (uri)
+            def result = new RouteDefinitionDelegate (routeDefinition)
 
-            currentDefinition = new RouteDefinitionDelegate (routeDefinition)
+            //set the routeDefinitionDelegate as the closure delegate
+            closure.delegate = result
+            closure.resolveStrategy = Closure.DELEGATE_FIRST
+
+            //pass routeDefinitionDelegate into froms() closure
+            def outcome = closure.call (result)
+            currentDefinition = new RouteDefinitionDelegate (outcome)
+
             log.info "returning route definition delegate for (" + routeDefinition + ")"
             return currentDefinition as RouteDefinitionDelegate
         }
@@ -152,7 +159,7 @@ class CamelBuilder extends FactoryBuilderSupport {
          * currentDefinition and try and invoke that, else generate exception
          */
         def methodMissing (String name, args) {
-            log.info "--> routeDelegate: method missing(): $name and args $args "
+            log.info "--> routeDefinitionDelegate: method missing(): $name and args $args "
 
             if (currentDefinition == null) {
                 throw new MissingMethodException(name, this.class, args)
@@ -179,12 +186,12 @@ class CamelBuilder extends FactoryBuilderSupport {
          */
         //@CompileDynamic
         class RouteDefinitionDelegate {
-            @Delegate RouteDefinition routeDefinition
+            RouteDefinition routeDefinition
             private ProcessorDefinition processDefinition
             private ChoiceDefinition  choiceDefinition
             private OnExceptionDefinition exceptionDefinition
 
-            RouteDefinitionDelegate (RouteDefinition routeDefinition) {
+            RouteDefinitionDelegate (def routeDefinition) {
                 this.routeDefinition = routeDefinition
                 def result = switch (routeDefinition) {
                     case {it instanceof ProcessorDefinition} -> processDefinition = routeDefinition
@@ -193,6 +200,32 @@ class CamelBuilder extends FactoryBuilderSupport {
                     default -> "no op"
                 }
                 log.info " setup RouteDefinitionDelegate for ($routeDefinition)"
+            }
+
+            /**
+             * checks the calls and routes to private implementation in the delegate - else
+             * call that method on the routeDefinition delegate
+             * @param name
+             * @param args
+             * @return
+             */
+            def invokeMethod (String name, args) {
+                log.info "routeDefinitionDelegate called with $name ($args)"
+                MetaMethod metaMethod
+                def result
+                if (metaMethod = this.respondsTo(name, args)) {
+                    //route to local implementation
+                    result = metaMethod.invokeMethod(name, args)
+                } else {
+                    metaMethod = routeDefinition.respondsTo (name, args)
+                    if (metaMethod) {
+                        //route call to native camel routeDefinition delegate
+                        result = metaMethod.invokeMethod(name, args)
+                        currentDefinition = new RouteDefinitionDelegate (result)
+                    }
+                }
+                currentDefinition = new RouteDefinitionDelegate (result)
+                return currentDefinition
             }
 
             /**
@@ -210,8 +243,7 @@ class CamelBuilder extends FactoryBuilderSupport {
                     transform.call (exchange)
 
                 }
-                currentDefinition = new RouteDefinitionDelegate (result)
-                return currentDefinition
+                return result
 
             }
 
@@ -226,16 +258,23 @@ class CamelBuilder extends FactoryBuilderSupport {
                 def result = target.process {exchange ->
                     filter.call (exchange)
                 }
-                currentDefinition = new RouteDefinitionDelegate (result)
-                return currentDefinition
+                return result
             }
 
-            def choice (Closure choice) {
-                ChoiceDefinition target = choiceDefinition
+            def choice (@DelegatesTo (RouteDefinitionDelegate) Closure choiceClosure) {
+                def val = this.when()
+                def  target = routeDefinition
                 //could detect # params and split into header and body ...
-                def result = target.choice ()
-                currentDefinition = new RouteDefinitionDelegate (result)
-                log.info "found choice $result, return as RouteDefinitionDelegate "
+                def choiceDefinition = target.choice ()
+                log.info "found choice $choiceDefinition "
+
+                choiceClosure.delegate = this
+                choiceClosure.resolveStrategy = Closure.DELEGATE_FIRST
+
+                def result = choiceClosure.call(this)
+
+
+                currentDefinition = new RouteDefinitionDelegate (choiceDefinition)
                 return currentDefinition
             }
         }
