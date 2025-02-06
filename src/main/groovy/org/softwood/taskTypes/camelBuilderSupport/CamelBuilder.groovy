@@ -203,13 +203,14 @@ class CamelBuilder extends FactoryBuilderSupport {
             }
 
             /**
+             * if method not declared in routeDefinitionDelegate
              * checks the calls and routes to private implementation in the delegate - else
              * call that method on the routeDefinition delegate
              * @param name
              * @param args
              * @return
              */
-            def invokeMethod (String name, args) {
+            def methodMissing (String name, args) {
                 log.info "routeDefinitionDelegate called with $name ($args)"
                 MetaMethod metaMethod
                 def result
@@ -234,16 +235,18 @@ class CamelBuilder extends FactoryBuilderSupport {
              * @param transform - closure that processes the message before it goes to next step
              * @return routeDelegate
              */
-            def transform ( Closure transform) {
+            RouteDefinitionDelegate transform ( Closure transform) {
                 log.info "transform processor ():  called on routeDefinition delegate with closure: " + transform.toString()
 
-                        ProcessorDefinition target = currentDefinition.routeDefinition
+                ProcessorDefinition target = currentDefinition.routeDefinition
                 def result = target.process {exchange ->
                     transform.delegate = this
                     transform.call (exchange)
 
                 }
-                return result
+
+                currentDefinition = new RouteDefinitionDelegate(target)
+                return currentDefinition
 
             }
 
@@ -252,17 +255,18 @@ class CamelBuilder extends FactoryBuilderSupport {
              * @param filter
              * @return routeDelegate
              */
-            def filter (Closure filter) {
-                ProcessorDefinition target = currentDefinition
+            RouteDefinitionDelegate filter (Closure filter) {
+                ProcessorDefinition target = currentDefinition.routeDefinition
                 //could detect # params and split into header and body ...
                 def result = target.process {exchange ->
                     filter.call (exchange)
                 }
-                return result
+
+                currentDefinition = new RouteDefinitionDelegate(result)
+                return currentDefinition
             }
 
-            def choice (@DelegatesTo (RouteDefinitionDelegate) Closure choiceClosure) {
-                def val = this.when()
+            RouteDefinitionDelegate choice (@DelegatesTo (RouteDefinitionDelegate) Closure choiceClosure) {
                 def  target = routeDefinition
                 //could detect # params and split into header and body ...
                 def choiceDefinition = target.choice ()
@@ -273,7 +277,10 @@ class CamelBuilder extends FactoryBuilderSupport {
 
                 def result = choiceClosure.call(this)
 
+                //close out the choice after closure call
+                choiceDefinition = choiceDefinition.endChoice()
 
+                //save that back into routeDelegate
                 currentDefinition = new RouteDefinitionDelegate (choiceDefinition)
                 return currentDefinition
             }

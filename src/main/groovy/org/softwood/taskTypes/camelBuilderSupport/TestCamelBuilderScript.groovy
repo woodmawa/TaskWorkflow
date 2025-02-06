@@ -36,17 +36,19 @@ builder.with {
     route {
         from("direct:start") {
             choice {
-                when { exchange ->
-                    exchange.in.body.toString().contains("file")
-                }
-                to("file:output") {
-                    when { exchange ->
-                        exchange.in.body.toString().contains("jms")
+                //like if then else - 'if' maps to 'when(predicate)', and
+                //'else' maps to 'otherwise' - : exchange -> exchange.in.body.toString().contains("file")
+                when ( exchange -> exchange.in.body.toString().contains("file")) {
+
+                    to("file:output") {
+
                     }
                 }
-                to("jms:queue:orders") {
-                    process { exchange ->
-                        log.info("Sent to JMS: ${exchange.in.body}")
+                when (exchange -> exchange.in.body.toString().contains("jms")) {
+                    to("jms:queue:orders") {
+                        process { exchange ->
+                            log.info("Sent to JMS: ${exchange.in.body}")
+                        }
                     }
                 }
                 otherwise {
