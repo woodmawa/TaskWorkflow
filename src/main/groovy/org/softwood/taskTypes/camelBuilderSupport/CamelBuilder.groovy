@@ -192,8 +192,8 @@ class CamelBuilder extends FactoryBuilderSupport {
             private OnExceptionDefinition exceptionDefinition
 
             RouteDefinitionDelegate (def routeDefinition) {
-                this.routeDefinition = routeDefinition
                 def result = switch (routeDefinition) {
+                    case {it.class ==  RouteDefinition} -> this.routeDefinition = routeDefinition
                     case {it instanceof ProcessorDefinition} -> processDefinition = routeDefinition
                     case {it instanceof ChoiceDefinition} -> choiceDefinition = routeDefinition
                     case {it instanceof OnExceptionDefinition}  -> exceptionDefinition = routeDefinition
@@ -212,16 +212,21 @@ class CamelBuilder extends FactoryBuilderSupport {
              */
             def methodMissing (String name, args) {
                 log.info "routeDefinitionDelegate called with $name ($args)"
-                MetaMethod metaMethod
+                MetaMethod[] metaMethods
+                List argsList
+                if (args.size() ==2) {
+                    argsList = List.of(*args)
+                }
+
                 def result
-                if (metaMethod = this.respondsTo(name, args)) {
+                if (metaMethods = this.respondsTo(name, argsList[0])) {
                     //route to local implementation
-                    result = metaMethod.invokeMethod(name, args)
+                    result = metaMethods[0].invokeMethod(name, argsList[0])
                 } else {
-                    metaMethod = routeDefinition.respondsTo (name, args)
-                    if (metaMethod) {
+                    metaMethods = routeDefinition.respondsTo (name, args)
+                    if (metaMethods[0]) {
                         //route call to native camel routeDefinition delegate
-                        result = metaMethod.invokeMethod(name, args)
+                        result = metaMethods[0].invokeMethod(name, argsList[0])
                         currentDefinition = new RouteDefinitionDelegate (result)
                     }
                 }
@@ -272,7 +277,9 @@ class CamelBuilder extends FactoryBuilderSupport {
                 def choiceDefinition = target.choice ()
                 log.info "found choice $choiceDefinition "
 
-                choiceClosure.delegate = this
+                def choiceDef  = new RouteDefinitionDelegate(choiceDefinition)
+
+                choiceClosure.delegate = choiceDef
                 choiceClosure.resolveStrategy = Closure.DELEGATE_FIRST
 
                 def result = choiceClosure.call(this)
