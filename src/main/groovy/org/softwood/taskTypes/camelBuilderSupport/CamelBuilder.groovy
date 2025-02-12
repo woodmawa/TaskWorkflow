@@ -5,7 +5,9 @@ import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.apache.camel.CamelContext
 import org.apache.camel.RoutesBuilder
+import org.apache.camel.builder.ExpressionClause
 import org.apache.camel.builder.RouteBuilder
+import org.apache.camel.Predicate
 import org.apache.camel.component.log.LogComponent
 import org.apache.camel.model.ChoiceDefinition
 import org.apache.camel.model.OnExceptionDefinition
@@ -235,6 +237,35 @@ class CamelBuilder extends FactoryBuilderSupport {
             }
 
             /**
+             * when {closure block, methods like body(), headers(), exchange etc returns Type T}
+             * @param whenClosure
+             * @return
+             */
+            RouteDefinitionDelegate when (@DelegatesTo (ExpressionClause) Closure whenClosure) {
+                ExpressionClause expressionClause = choiceDefinition.when ()
+
+                whenClosure.delegate = expressionClause
+                whenClosure.resolveStrategy = Closure.DELEGATE_FIRST
+                whenClosure.call()
+
+                ChoiceDefinition result = choiceDefinition.endChoice()
+
+                currentDefinition = new RouteDefinitionDelegate(result)
+                return currentDefinition
+
+            }
+            /**
+             * when (predicate - lambda style ) {closure block  }
+             * @param predicate
+             * @return
+             */
+            RouteDefinitionDelegate when (Predicate predicate, @DelegatesTo (RouteDefinitionDelegate) Closure whenClosure) {
+                ChoiceDefinition whenChoice = choiceDefinition
+
+                //set the predicate for the whenClause
+                def choiceResult = whenChoice (predicate)
+            }
+            /**
              * use when you want to read headers and transform the body data
              *
              * @param transform - closure that processes the message before it goes to next step
@@ -260,7 +291,7 @@ class CamelBuilder extends FactoryBuilderSupport {
              * @param filter
              * @return routeDelegate
              */
-            RouteDefinitionDelegate filter (Closure filter) {
+            RouteDefinitionDelegate filter (@DelegatesTo (RouteDefinitionDelegate) Closure filter) {
                 ProcessorDefinition target = currentDefinition.routeDefinition
                 //could detect # params and split into header and body ...
                 def result = target.process {exchange ->
