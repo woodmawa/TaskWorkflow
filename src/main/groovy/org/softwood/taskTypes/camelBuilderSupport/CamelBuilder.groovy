@@ -278,7 +278,7 @@ class CamelBuilder extends FactoryBuilderSupport {
                 def result = choiceClosure.call(this)
 
                 //close out the choice after closure call
-                choiceDefinition = choiceDefinition.endChoice()
+                choiceDefinition = choiceDefinition.end()
 
                 //save that back into routeDelegate
                 currentDefinition = new RouteDefinitionDelegate (choiceDefinition)
