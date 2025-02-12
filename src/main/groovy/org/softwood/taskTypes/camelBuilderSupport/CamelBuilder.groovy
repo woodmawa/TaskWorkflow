@@ -275,6 +275,7 @@ class CamelBuilder extends FactoryBuilderSupport {
                 def  target = routeDefinition
                 //could detect # params and split into header and body ...
                 def choiceDefinition = target.choice ()
+                def processDefinition
                 log.info "found choice $choiceDefinition "
 
                 def choiceDef  = new RouteDefinitionDelegate(choiceDefinition)
@@ -285,10 +286,10 @@ class CamelBuilder extends FactoryBuilderSupport {
                 def result = choiceClosure.call(this)
 
                 //close out the choice after closure call
-                choiceDefinition = choiceDefinition.end()
+                processDefinition = choiceDefinition.end()
 
                 //save that back into routeDelegate
-                currentDefinition = new RouteDefinitionDelegate (choiceDefinition)
+                currentDefinition = new RouteDefinitionDelegate (processDefinition)
                 return currentDefinition
             }
         }
